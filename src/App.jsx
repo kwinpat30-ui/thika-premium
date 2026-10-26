@@ -4,7 +4,7 @@ import { db } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
-  Search, Filter, Phone, LockKeyhole, History,
+  Search, Filter, Phone, History,
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
@@ -600,4 +600,71 @@ export default function App() {
       if (response.ok && (data.success || data.ResponseCode === "0" || data.ResponseCode === 0)) {
         setPaymentModal(prev => ({ ...prev, status: 'success' }));
         setTimeout(() => {
-          setPaymentModal({ isOpen
+          setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+          setToastMsg(`STK push sent! Check your phone.`);
+          setTimeout(() => setToastMsg(''), 4000);
+        }, 2500);
+      } else {
+        setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+        setToastMsg("Failed: " + (data.message || data.error || "Please try again."));
+        setTimeout(() => setToastMsg(''), 4000);
+      }
+    } catch (error) {
+      console.error("STK Push Error:", error);
+      setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+      setToastMsg("Connection error to payment gateway.");
+      setTimeout(() => setToastMsg(''), 4000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between">
+      
+      {toastMsg && <Toast msg={toastMsg} />}
+
+      {/* Payment Modal */}
+      {paymentModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl w-full max-w-sm p-6 flex flex-col items-center text-center shadow-2xl">
+            {paymentModal.status === 'waiting' ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 border border-green-500/30">
+                  <Loader2 size={32} className="text-green-500 animate-spin" />
+                </div>
+                <h3 className="text-lg font-black text-white mb-2">Sending STK Push</h3>
+                <p className="text-sm text-gray-400 mb-4">Prompting <span className="text-[#00F0FF] font-mono">{customerPhone}</span> for KES {paymentModal.price}.</p>
+                <p className="text-xs text-gray-500 animate-pulse">Check your phone for the M-Pesa PIN prompt...</p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4 border border-green-500/50">
+                  <CheckCircle2 size={32} className="text-green-500" />
+                </div>
+                <h3 className="text-lg font-black text-white mb-2">STK Push Sent!</h3>
+                <p className="text-sm text-gray-400">Enter your PIN to complete the unlock.</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        
+        <main>
+          {(activeTab === 'home' || activeTab === 'trending' || activeTab === 'latest' || activeTab === 'popular' || activeTab === 'toprated') && (
+            <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
+          )}
+          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
+          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} />}
+          {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
+          {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
+          {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
+          {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
+        </main>
+      </div>
+
+      <Footer setActiveTab={setActiveTab} />
+    </div>
+  );
+}
