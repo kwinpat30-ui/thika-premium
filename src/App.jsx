@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, onSnapshot, query, where } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { db } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
@@ -23,7 +23,6 @@ const Logo = () => (
   <div className="flex items-center gap-3 cursor-pointer group">
     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FFD700] via-[#12151c] to-[#00F0FF] p-[1px] shadow-[0_0_15px_rgba(0,240,255,0.3)]">
       <div className="w-full h-full bg-[#0A0C10] rounded-xl flex items-center justify-center overflow-hidden relative">
-        {/* Silhouette Highway & Crown Vector */}
         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#FFD700] group-hover:scale-110 transition-transform duration-300" fill="currentColor">
           <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l5.4 3.4L12 11 6.6 7.6 12 4.2zM6 9.4l5 3.1v6.1l-5-3.1V9.4zm12 0v6.1l-5 3.1v-6.1l5-3.1z" />
         </svg>
@@ -41,13 +40,10 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        
-        {/* Silhouette Logo */}
         <div onClick={() => setActiveTab('home')}>
           <Logo />
         </div>
 
-        {/* Search Bar */}
         <div className="hidden md:flex relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input 
@@ -59,7 +55,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           />
         </div>
 
-        {/* User Actions & Subscribe CTA */}
         <div className="flex items-center gap-3">
           {currentUser ? (
             <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-gray-900 border border-gray-800 px-3 py-2 rounded-full">
@@ -79,7 +74,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
         </div>
       </div>
 
-      {/* Category Navigation Bar */}
       <div className="max-w-6xl mx-auto flex overflow-x-auto gap-6 pt-3 pb-1 border-t border-gray-800/50 mt-3 text-xs font-bold scrollbar-none">
         {[
           { id: 'home', label: 'Featured' },
@@ -106,8 +100,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      
-      {/* Hero Banner */}
       <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('vip')}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
         <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -118,7 +110,6 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
         </div>
       </div>
 
-      {/* Grid of Vaults */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
@@ -441,27 +432,43 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   );
 };
 
-// --- Real Firebase Auth Layout ---
+// --- Dual Auth Layout (Phone OTP + Email/Password) ---
 const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
+  const [method, setMethod] = useState('phone'); // 'phone' or 'email'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('phone-input'); // 'phone-input' or 'otp-input'
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [isAdult, setIsAdult] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (method === 'phone' && !window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {}
+        });
+      } catch (e) {
+        console.error("Recaptcha error:", e);
+      }
+    }
+  }, [method]);
+
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!isLoginMode && !isAdult) {
       setToastMsg("You must confirm you are 18 or older to register.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-    
     if (!email || !password) {
       setToastMsg("Please fill in all fields.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-
     setLoading(true);
     try {
       if (isLoginMode) {
@@ -476,8 +483,65 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
         setActiveTab('home');
       }, 1500);
     } catch (error) {
-      console.error("Auth error:", error);
       setToastMsg("Error: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!isLoginMode && !isAdult) {
+      setToastMsg("You must confirm you are 18 or older to register.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    let formattedPhone = phone.trim();
+    if (formattedPhone.startsWith('0')) formattedPhone = '+254' + formattedPhone.slice(1);
+    if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone;
+
+    if (formattedPhone.length < 10) {
+      setToastMsg("Please enter a valid phone number.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setStep('otp-input');
+      setToastMsg("Verification code sent via SMS!");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (error) {
+      console.error("SMS error:", error);
+      setToastMsg("Failed to send SMS: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length < 6) {
+      setToastMsg("Enter the 6-digit verification code.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await confirmationResult.confirm(otp);
+      setToastMsg("Phone authentication successful!");
+      setTimeout(() => {
+        setToastMsg('');
+        setActiveTab('home');
+      }, 1500);
+    } catch (error) {
+      setToastMsg("Invalid verification code.");
       setTimeout(() => setToastMsg(''), 4000);
     } finally {
       setLoading(false);
@@ -491,48 +555,136 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
         <p className="text-gray-400 text-xs">Secure your creator subscriptions across all your devices.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
-        <div>
-          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email address</label>
-          <input 
-            type="email" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com" 
-            className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
-          <input 
-            type="password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••" 
-            className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-          />
-        </div>
-
-        {!isLoginMode && (
-          <div className="flex items-start gap-3 pt-2">
-            <input 
-              type="checkbox" 
-              id="ageCheck" 
-              checked={isAdult}
-              onChange={(e) => setIsAdult(e.target.checked)}
-              className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
-            />
-            <label htmlFor="ageCheck" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
-              I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
-            </label>
-          </div>
-        )}
-
-        <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
-          {loading ? "PROCESSING..." : (isLoginMode ? 'Log in' : 'Create account')}
+      <div className="grid grid-cols-2 gap-2 bg-[#12151c] p-1.5 rounded-xl border border-gray-800">
+        <button 
+          type="button" 
+          onClick={() => { setMethod('phone'); setStep('phone-input'); }}
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'phone' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+        >
+          📱 Phone (SMS OTP)
         </button>
-      </form>
+        <button 
+          type="button" 
+          onClick={() => setMethod('email')}
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'email' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+        >
+          ✉️ Email & Password
+        </button>
+      </div>
+
+      {method === 'email' ? (
+        <form onSubmit={handleEmailSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
+          <div>
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email address</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com" 
+              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••" 
+              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+            />
+          </div>
+
+          {!isLoginMode && (
+            <div className="flex items-start gap-3 pt-2">
+              <input 
+                type="checkbox" 
+                id="ageCheckEmail" 
+                checked={isAdult}
+                onChange={(e) => setIsAdult(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="ageCheckEmail" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
+                I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
+              </label>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+            {loading ? "PROCESSING..." : (isLoginMode ? 'Log in with Email' : 'Create account')}
+          </button>
+        </form>
+      ) : (
+        <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+          {step === 'phone-input' ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone size={16} className="text-[#00F0FF]" />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0712 345 678" 
+                    className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#00F0FF]"
+                  />
+                </div>
+              </div>
+
+              {!isLoginMode && (
+                <div className="flex items-start gap-3 pt-2">
+                  <input 
+                    type="checkbox" 
+                    id="ageCheckPhone" 
+                    checked={isAdult}
+                    onChange={(e) => setIsAdult(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+                  />
+                  <label htmlFor="ageCheckPhone" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
+                    I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
+                  </label>
+                </div>
+              )}
+
+              <div id="recaptcha-container"></div>
+
+              <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+                {loading ? "SENDING CODE..." : "Send Verification Code"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Enter 6-Digit OTP Code</label>
+                <input 
+                  type="text" 
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456" 
+                  maxLength={6}
+                  className="w-full bg-black text-white font-mono text-center tracking-widest text-lg border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+                {loading ? "VERIFYING..." : "Verify Code & Login"}
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => setStep('phone-input')}
+                className="w-full text-center text-xs text-gray-400 hover:text-white pt-2"
+              >
+                ← Change Phone Number
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       <div className="text-center">
         <button onClick={() => setActiveTab(isLoginMode ? 'signup' : 'login')} className="text-xs text-gray-400 hover:text-white">
@@ -792,7 +944,6 @@ export default function App() {
       
       {toastMsg && <Toast msg={toastMsg} />}
 
-      {/* Payment Modal */}
       {paymentModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="bg-[#12151c] border border-gray-800 rounded-2xl w-full max-w-sm p-6 flex flex-col items-center text-center shadow-2xl">
