@@ -289,7 +289,7 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
   );
 };
 
-// --- 3. Membership / Account Benefits View ---
+// --- Membership / Account Benefits View ---
 const MembershipLayout = ({ setActiveTab }) => {
   return (
     <div className="max-w-xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
@@ -331,7 +331,7 @@ const MembershipLayout = ({ setActiveTab }) => {
   );
 };
 
-// --- 4. Restore Access Page (M-Pesa Code Recovery) ---
+// --- Restore Access Page ---
 const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   const [phone, setPhone] = useState('');
   const [mpesaCode, setMpesaCode] = useState('');
@@ -399,7 +399,7 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   );
 };
 
-// --- Auth Layout with Age Verification Checkbox ---
+// --- Auth Layout ---
 const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -484,7 +484,100 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   );
 };
 
-// --- 5. Professional Legal Footer & Age Disclaimer ---
+// --- Dynamic Legal & Takedown Policy Layout ---
+const PolicyLayout = ({ activeTab, setActiveTab }) => {
+  const getPolicyContent = () => {
+    switch (activeTab) {
+      case 'terms':
+        return {
+          title: "Terms of Service",
+          content: "Welcome to Thika Expressway VIP. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking. Unauthorized downloading, screen recording, or redistribution will result in immediate account termination and permanent device blacklisting."
+        };
+      case 'privacy':
+        return {
+          title: "Privacy Policy",
+          content: "We value your privacy. We only collect necessary transaction data (such as your M-Pesa phone number) required to process payments and verify active subscriptions. We never sell, rent, or share your personal data with third-party marketers."
+        };
+      case 'cookies':
+        return {
+          title: "Cookies Policy",
+          content: "We use essential cookies and local storage tokens (such as your saved M-Pesa number session) to ensure seamless video playback, authentication, and secure access across your devices."
+        };
+      case 'disclaimer':
+        return {
+          title: "Age Disclaimer",
+          content: "This website contains adult and mature entertainment content. All users, subscribers, and performers must be 18 years of age or older (or the legal age of majority in their jurisdiction). By entering the site, you certify that you meet this age requirement."
+        };
+      case 'takedown':
+        return {
+          title: "Content and Takedown Policy",
+          content: "Thika Expressway respects the intellectual property and privacy rights of all creators and individuals. If you believe your copyrighted work or personal media has been posted on our platform without authorization, we will review and remove it expeditiously."
+        };
+      default:
+        return {
+          title: "Support & Legal Information",
+          content: "For any inquiries, please contact our support team."
+        };
+    }
+  };
+
+  const policy = getPolicyContent();
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6 animate-in fade-in text-gray-300 text-xs leading-relaxed">
+      <div className="border-b border-gray-800 pb-4">
+        <h1 className="text-2xl font-black text-white">{policy.title}</h1>
+        <p className="text-gray-500 text-[11px] mt-1">Last updated: October 2026</p>
+      </div>
+
+      <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+        <p>{policy.content}</p>
+
+        {activeTab === 'takedown' && (
+          <div className="mt-6 pt-6 border-t border-gray-800 space-y-3">
+            <h3 className="font-bold text-white text-sm">How to Report a Takedown</h3>
+            <p>To submit a valid takedown notice, please send a message or email containing:</p>
+            <ul className="list-disc pl-5 space-y-1 text-gray-400">
+              <li>Direct URL link(s) to the specific content on our site.</li>
+              <li>Proof of copyright ownership or identity authorization.</li>
+              <li>Your official contact information (Email or Telegram handle).</li>
+            </ul>
+          </div>
+        )}
+
+        {/* Support Contact Box with @mr_exposes Telegram Handle */}
+        <div className="mt-8 pt-6 border-t border-gray-800 bg-black/40 p-4 rounded-xl border border-gray-800/80 space-y-2">
+          <h4 className="font-bold text-white uppercase text-[10px] tracking-wider text-[#00F0FF]">Official Support Channels</h4>
+          <p className="text-gray-400 text-[11px]">Need immediate assistance or content removal? Reach out directly:</p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <a 
+              href="https://t.me/mr_exposes" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              Telegram: @mr_exposes
+            </a>
+            <a 
+              href="mailto:support@thikasuperhighwaypremium.com" 
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              Email Support
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center pt-4">
+        <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] font-bold hover:underline">
+          ← Return to Home Feed
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Footer with Connected Policy Links ---
 const Footer = ({ setActiveTab }) => {
   return (
     <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
@@ -496,10 +589,10 @@ const Footer = ({ setActiveTab }) => {
         <div>
           <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Information</h4>
           <ul className="space-y-2 text-[11px]">
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Terms of Service</button></li>
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Privacy Policy</button></li>
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Cookies</button></li>
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Age Disclaimer</button></li>
+            <li><button onClick={() => setActiveTab('terms')} className="hover:text-[#00F0FF] transition-colors">Terms of Service</button></li>
+            <li><button onClick={() => setActiveTab('privacy')} className="hover:text-[#00F0FF] transition-colors">Privacy Policy</button></li>
+            <li><button onClick={() => setActiveTab('cookies')} className="hover:text-[#00F0FF] transition-colors">Cookies</button></li>
+            <li><button onClick={() => setActiveTab('disclaimer')} className="hover:text-[#00F0FF] transition-colors">Age Disclaimer</button></li>
           </ul>
         </div>
         <div>
@@ -512,8 +605,8 @@ const Footer = ({ setActiveTab }) => {
         <div>
           <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Content removal</h4>
           <ul className="space-y-2 text-[11px]">
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Content and Takedown Policy</button></li>
-            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Report a takedown</button></li>
+            <li><button onClick={() => setActiveTab('takedown')} className="hover:text-[#00F0FF] transition-colors">Content and Takedown Policy</button></li>
+            <li><button onClick={() => setActiveTab('takedown')} className="hover:text-[#00F0FF] transition-colors">Report a takedown</button></li>
           </ul>
         </div>
         <div>
@@ -661,6 +754,11 @@ export default function App() {
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
+          
+          {/* Policy & Takedown Routes */}
+          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && (
+            <PolicyLayout activeTab={activeTab} setActiveTab={setActiveTab} />
+          )}
         </main>
       </div>
 
