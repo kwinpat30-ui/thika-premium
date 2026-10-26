@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
@@ -8,6 +9,8 @@ import {
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
+const auth = getAuth();
+
 // --- Reusable Toast Component ---
 const Toast = ({ msg }) => (
   <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-green-500/90 backdrop-blur-sm text-black px-4 py-3 rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.4)] text-sm font-bold flex items-center gap-2 w-[90%] max-w-sm border border-green-400 animate-in fade-in slide-in-from-top-5">
@@ -15,21 +18,33 @@ const Toast = ({ msg }) => (
   </div>
 );
 
+// --- Custom Silhouette Logo Component ---
+const Logo = () => (
+  <div className="flex items-center gap-3 cursor-pointer group">
+    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FFD700] via-[#12151c] to-[#00F0FF] p-[1px] shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+      <div className="w-full h-full bg-[#0A0C10] rounded-xl flex items-center justify-center overflow-hidden relative">
+        {/* Silhouette Highway & Crown Vector */}
+        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#FFD700] group-hover:scale-110 transition-transform duration-300" fill="currentColor">
+          <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l5.4 3.4L12 11 6.6 7.6 12 4.2zM6 9.4l5 3.1v6.1l-5-3.1V9.4zm12 0v6.1l-5 3.1v-6.1l5-3.1z" />
+        </svg>
+      </div>
+    </div>
+    <div className="flex flex-col uppercase tracking-tighter font-black leading-none">
+      <span className="text-[#00F0FF] text-sm md:text-base tracking-wider">Thika</span>
+      <span className="text-[#FFD700] text-[9px] tracking-[0.25em]">Superhighway</span>
+    </div>
+  </div>
+);
+
 // --- 1. Professional Top Navigation Bar ---
-const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery }) => {
+const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout }) => {
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
         
-        {/* Logo */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FFD700] to-[#00F0FF] flex items-center justify-center font-black text-black text-lg">
-            T
-          </div>
-          <div className="flex flex-col uppercase tracking-tighter font-black leading-none">
-            <span className="text-[#00F0FF] text-base">Thika</span>
-            <span className="text-[#FFD700] text-[10px] tracking-[0.2em]">Expressway</span>
-          </div>
+        {/* Silhouette Logo */}
+        <div onClick={() => setActiveTab('home')}>
+          <Logo />
         </div>
 
         {/* Search Bar */}
@@ -44,8 +59,17 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery }) => {
           />
         </div>
 
-        {/* Subscribe CTA Button */}
+        {/* User Actions & Subscribe CTA */}
         <div className="flex items-center gap-3">
+          {currentUser ? (
+            <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-gray-900 border border-gray-800 px-3 py-2 rounded-full">
+              <LogOut size={14}/> Logout
+            </button>
+          ) : (
+            <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">
+              Log in
+            </button>
+          )}
           <button 
             onClick={() => setActiveTab('vip')} 
             className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5"
@@ -89,7 +113,7 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
         <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute bottom-6 left-6 z-20 space-y-2">
           <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
-          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Expressway VIP Experience</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Superhighway Premium Experience</h2>
           <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
         </div>
       </div>
@@ -136,7 +160,7 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <span className="text-[9px] text-[#00F0FF] uppercase tracking-wider font-bold">VIP Creator</span>
+                  <span className="text-[9px] text-[#00F0FF] uppercase tracking-wider font-bold">Premium Creator</span>
                   <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title || "Exclusive Stream"}</h4>
                   <div className="text-[10px] text-gray-400 mt-0.5 flex justify-between items-center">
                     <span>KES {vault.price || 50} access</span>
@@ -183,7 +207,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 animate-in fade-in">
       <div className="border-b border-gray-800/80 pb-4">
-        <h1 className="text-2xl font-black text-white tracking-tight">{activeVault?.title || 'Thika VIP Lounge'}</h1>
+        <h1 className="text-2xl font-black text-white tracking-tight">{activeVault?.title || 'Thika Superhighway Premium Lounge'}</h1>
         <p className="text-sm text-gray-400 mt-1">
           {isUnlocked ? 'You have active premium access to this content stream.' : 'Unlock exclusive weekend drops and unreleased high-def sets instantly.'}
         </p>
@@ -331,28 +355,46 @@ const MembershipLayout = ({ setActiveTab }) => {
   );
 };
 
-// --- Restore Access Page ---
+// --- Real Firebase Restore Access Page ---
 const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   const [phone, setPhone] = useState('');
   const [mpesaCode, setMpesaCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRestore = (e) => {
+  const handleRestore = async (e) => {
     e.preventDefault();
     if (!phone || !mpesaCode) {
       setToastMsg("Please provide both your phone number and payment code.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
+    
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const q = query(
+        collection(db, "transactions"), 
+        where("mpesaCode", "==", mpesaCode.trim().toUpperCase()),
+        where("phone", "==", phone.trim())
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setToastMsg("Access code verified! Restoring session...");
+        setTimeout(() => {
+          setToastMsg('');
+          setActiveTab('vip');
+        }, 2000);
+      } else {
+        setToastMsg("No matching transaction found. Check code & phone.");
+        setTimeout(() => setToastMsg(''), 4000);
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+      setToastMsg("Error verifying transaction. Try again.");
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
       setLoading(false);
-      setToastMsg("Access code verified! Restoring VIP session...");
-      setTimeout(() => {
-        setToastMsg('');
-        setActiveTab('vip');
-      }, 2000);
-    }, 1500);
+    }
   };
 
   return (
@@ -399,29 +441,47 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   );
 };
 
-// --- Auth Layout ---
+// --- Real Firebase Auth Layout ---
 const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdult, setIsAdult] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isLoginMode && !isAdult) {
       setToastMsg("You must confirm you are 18 or older to register.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
+    
+    if (!email || !password) {
+      setToastMsg("Please fill in all fields.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setToastMsg(isLoginMode ? "Login successful!" : "Account created successfully!");
+    try {
+      if (isLoginMode) {
+        await signInWithEmailAndPassword(auth, email, password);
+        setToastMsg("Login successful!");
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setToastMsg("Account created successfully!");
+      }
       setTimeout(() => {
         setToastMsg('');
         setActiveTab('home');
       }, 1500);
-    }, 1200);
+    } catch (error) {
+      console.error("Auth error:", error);
+      setToastMsg("Error: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -433,12 +493,12 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
 
       <form onSubmit={handleSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
         <div>
-          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone or Email</label>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email address</label>
           <input 
-            type="text" 
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="0712 345 678 or email@domain.com" 
+            type="email" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com" 
             className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
           />
         </div>
@@ -491,7 +551,7 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
       case 'terms':
         return {
           title: "Terms of Service",
-          content: "Welcome to Thika Expressway VIP. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking. Unauthorized downloading, screen recording, or redistribution will result in immediate account termination and permanent device blacklisting."
+          content: "Welcome to Thika Superhighway Premium. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking. Unauthorized downloading, screen recording, or redistribution will result in immediate account termination and permanent device blacklisting."
         };
       case 'privacy':
         return {
@@ -511,7 +571,7 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
       case 'takedown':
         return {
           title: "Content and Takedown Policy",
-          content: "Thika Expressway respects the intellectual property and privacy rights of all creators and individuals. If you believe your copyrighted work or personal media has been posted on our platform without authorization, we will review and remove it expeditiously."
+          content: "Thika Superhighway Premium respects the intellectual property and privacy rights of all creators and individuals. If you believe your copyrighted work or personal media has been posted on our platform without authorization, we will review and remove it expeditiously."
         };
       default:
         return {
@@ -545,7 +605,6 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
           </div>
         )}
 
-        {/* Support Contact Box with @mr_exposes Telegram Handle */}
         <div className="mt-8 pt-6 border-t border-gray-800 bg-black/40 p-4 rounded-xl border border-gray-800/80 space-y-2">
           <h4 className="font-bold text-white uppercase text-[10px] tracking-wider text-[#00F0FF]">Official Support Channels</h4>
           <p className="text-gray-400 text-[11px]">Need immediate assistance or content removal? Reach out directly:</p>
@@ -577,12 +636,12 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// --- Footer with Connected Policy Links ---
+// --- Footer ---
 const Footer = ({ setActiveTab }) => {
   return (
     <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
       <p className="text-[11px] leading-relaxed text-gray-400 max-w-2xl">
-        Thika Expressway brings you exclusive videos and photos from the creators you follow, with new content added all the time. Subscribe for full access, or create a free account to keep your access on every device.
+        Thika Superhighway Premium brings you exclusive videos and photos from the creators you follow, with new content added all the time. Subscribe for full access, or create a free account to keep your access on every device.
       </p>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -620,7 +679,7 @@ const Footer = ({ setActiveTab }) => {
       </div>
       
       <div className="pt-6 border-t border-gray-900/80 text-[10px] text-center text-gray-600">
-        © 2026 Thika Expressway VIP. All rights reserved.
+        © 2026 Thika Superhighway Premium. All rights reserved.
       </div>
     </footer>
   );
@@ -631,6 +690,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [toastMsg, setToastMsg] = useState('');
   const [vaults, setVaults] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('thika_customer_phone') || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, price: 0, status: 'waiting' });
@@ -638,6 +698,23 @@ export default function App() {
   const [selectedVaultId, setSelectedVaultId] = useState('QCVwrsVuEtlAQ3PMziVs');
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [activeVault, setActiveVault] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setToastMsg("Logged out successfully");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   useEffect(() => {
     if (customerPhone) {
@@ -742,7 +819,7 @@ export default function App() {
       )}
 
       <div>
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} />
         
         <main>
           {(activeTab === 'home' || activeTab === 'trending' || activeTab === 'latest' || activeTab === 'popular' || activeTab === 'toprated') && (
@@ -755,7 +832,6 @@ export default function App() {
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
           
-          {/* Policy & Takedown Routes */}
           {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && (
             <PolicyLayout activeTab={activeTab} setActiveTab={setActiveTab} />
           )}
