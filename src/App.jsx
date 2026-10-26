@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { db } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
-  Search, Filter, Phone, History,
+  Search, Filter, Phone, History, PlusCircle, Trash2, LayoutDashboard,
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
 const auth = getAuth();
+const OWNER_EMAIL = "kwinpat30@gmail.com"; // Secure Admin Owner Lock
 
 // --- Reusable Toast Component ---
 const Toast = ({ msg }) => (
@@ -36,7 +37,7 @@ const Logo = () => (
 );
 
 // --- 1. Professional Top Navigation Bar ---
-const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout }) => {
+const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner }) => {
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
@@ -57,9 +58,19 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 
         <div className="flex items-center gap-3">
           {currentUser ? (
-            <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-gray-900 border border-gray-800 px-3 py-2 rounded-full">
-              <LogOut size={14}/> Logout
-            </button>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <button 
+                  onClick={() => setActiveTab('admin')} 
+                  className={`text-xs font-bold px-3 py-2 rounded-full border transition-all flex items-center gap-1 ${activeTab === 'admin' ? 'bg-[#00F0FF] text-black border-[#00F0FF]' : 'bg-gray-900 text-[#00F0FF] border-gray-800 hover:border-[#00F0FF]'}`}
+                >
+                  <LayoutDashboard size={14}/> Admin
+                </button>
+              )}
+              <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-gray-900 border border-gray-800 px-3 py-2 rounded-full">
+                <LogOut size={14}/> Logout
+              </button>
+            </div>
           ) : (
             <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">
               Log in
@@ -96,7 +107,192 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
-// --- 2. Creator Feed / Vault Grid Layout ---
+// --- Admin Dashboard Layout ---
+const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('50');
+  const [mediaCount, setMediaCount] = useState('15 media');
+  const [imgUrl, setImgUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreateVault = async (e) => {
+    e.preventDefault();
+    if (!title || !imgUrl) {
+      setToastMsg("Please provide a title and thumbnail image URL.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const docRef = await addDoc(collection(db, "vaults"), {
+        title: title.trim(),
+        price: Number(price),
+        mediaCount: mediaCount.trim(),
+        img: imgUrl.trim(),
+        status: 'locked',
+        createdAt: new Date()
+      });
+
+      setVaults(prev => [...prev, { id: docRef.id, title, price: Number(price), mediaCount, img: imgUrl, status: 'locked' }]);
+      setTitle('');
+      setImgUrl('');
+      setToastMsg("New content vault published successfully!");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (error) {
+      console.error("Error adding vault:", error);
+      setToastMsg("Error publishing vault: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteVault = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this vault?")) return;
+    try {
+      await deleteDoc(doc(db, "vaults", id));
+      setVaults(prev => prev.filter(v => v.id !== id));
+      setToastMsg("Vault deleted successfully.");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (error) {
+      setToastMsg("Error deleting vault.");
+      setTimeout(() => setToastMsg(''), 3000);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-in fade-in">
+      <div className="border-b border-gray-800 pb-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-black text-white flex items-center gap-2">
+            <LayoutDashboard className="text-[#00F0FF]" /> Admin Control Center
+          </h1>
+          <p className="text-gray-400 text-xs mt-1">Publish content vaults, manage pricing, and monitor site activity.</p>
+        </div>
+        <button onClick={() => setActiveTab('home')} className="text-xs bg-gray-900 border border-gray-800 hover:text-white px-4 py-2 rounded-xl text-gray-300 font-bold">
+          View Live Site →
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <PlusCircle size={16} className="text-[#FFD700]" /> Publish New Content Vault
+          </h3>
+
+          <form onSubmit={handleCreateVault} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Vault / Creator Title</label>
+              <input 
+                type="text" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                placeholder="E.G. Nairobi Nightclub VIP Set" 
+                className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Price (KES)</label>
+                <input 
+                  type="number" 
+                  value={price} 
+                  onChange={(e) => setPrice(e.target.value)} 
+                  className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Media Count</label>
+                <input 
+                  type="text" 
+                  value={mediaCount} 
+                  onChange={(e) => setMediaCount(e.target.value)} 
+                  placeholder="15 media" 
+                  className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Thumbnail Image URL</label>
+              <input 
+                type="text" 
+                value={imgUrl} 
+                onChange={(e) => setImgUrl(e.target.value)} 
+                placeholder="https://images.unsplash.com/..." 
+                className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-3 rounded-xl text-xs transition-all shadow-lg disabled:opacity-50">
+              {loading ? "PUBLISHING..." : "Publish Vault Live"}
+            </button>
+          </form>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-3">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Platform Overview</h3>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="bg-black/50 border border-gray-800/80 p-4 rounded-xl text-center">
+                <span className="text-2xl font-black text-[#00F0FF]">{vaults.length}</span>
+                <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Active Vaults</p>
+              </div>
+              <div className="bg-black/50 border border-gray-800/80 p-4 rounded-xl text-center">
+                <span className="text-2xl font-black text-[#FFD700]">KES {vaults.reduce((acc, v) => acc + Number(v.price || 50), 0)}</span>
+                <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Catalog Value</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-2">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Support Contact</h3>
+            <p className="text-xs text-gray-300">Telegram Handle: <span className="text-[#00F0FF] font-mono font-bold">@mr_exposes</span></p>
+            <p className="text-xs text-gray-300">Owner Email: <span className="text-[#FFD700] font-mono">{OWNER_EMAIL}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Manage Published Content Vaults</h3>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-gray-300">
+            <thead className="border-b border-gray-800 text-gray-500 uppercase text-[10px]">
+              <tr>
+                <th className="pb-3">Thumbnail</th>
+                <th className="pb-3">Title</th>
+                <th className="pb-3">Price</th>
+                <th className="pb-3">Media</th>
+                <th className="pb-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800/60">
+              {vaults.map((vault) => (
+                <tr key={vault.id} className="hover:bg-black/30">
+                  <td className="py-3">
+                    <img src={vault.img || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=200&auto=format&fit=crop"} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" />
+                  </td>
+                  <td className="py-3 font-bold text-white">{vault.title}</td>
+                  <td className="py-3 text-[#FFD700] font-mono">KES {vault.price || 50}</td>
+                  <td className="py-3 text-gray-400">{vault.mediaCount || '15 media'}</td>
+                  <td className="py-3 text-right space-x-2">
+                    <button onClick={() => { setSelectedVaultId(vault.id); setActiveTab('vip'); }} className="text-[#00F0FF] hover:underline px-2 py-1 font-bold">View</button>
+                    <button onClick={() => handleDeleteVault(vault.id)} className="text-red-400 hover:text-red-300 p-1 rounded"><Trash2 size={16}/></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Home Layout ---
 const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
@@ -169,7 +365,7 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
   );
 };
 
-// --- VIP Player & Watermark Layout ---
+// --- VIP Layout ---
 const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment }) => {
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
@@ -304,7 +500,7 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
   );
 };
 
-// --- Membership / Account Benefits View ---
+// --- Membership Layout ---
 const MembershipLayout = ({ setActiveTab }) => {
   return (
     <div className="max-w-xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
@@ -346,7 +542,7 @@ const MembershipLayout = ({ setActiveTab }) => {
   );
 };
 
-// --- Real Firebase Restore Access Page ---
+// --- Restore Layout ---
 const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   const [phone, setPhone] = useState('');
   const [mpesaCode, setMpesaCode] = useState('');
@@ -432,14 +628,14 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   );
 };
 
-// --- Dual Auth Layout (Phone OTP + Email/Password) ---
+// --- Auth Layout ---
 const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
-  const [method, setMethod] = useState('phone'); // 'phone' or 'email'
+  const [method, setMethod] = useState('phone');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState('phone-input'); // 'phone-input' or 'otp-input'
+  const [step, setStep] = useState('phone-input');
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [isAdult, setIsAdult] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -696,7 +892,7 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   );
 };
 
-// --- Dynamic Legal & Takedown Policy Layout ---
+// --- Policy Layout ---
 const PolicyLayout = ({ activeTab, setActiveTab }) => {
   const getPolicyContent = () => {
     switch (activeTab) {
@@ -851,6 +1047,8 @@ export default function App() {
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [activeVault, setActiveVault] = useState(null);
 
+  const isOwner = currentUser && currentUser.email === OWNER_EMAIL;
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -970,7 +1168,7 @@ export default function App() {
       )}
 
       <div>
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} />
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} />
         
         <main>
           {(activeTab === 'home' || activeTab === 'trending' || activeTab === 'latest' || activeTab === 'popular' || activeTab === 'toprated') && (
@@ -983,6 +1181,11 @@ export default function App() {
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
           
+          {/* Secured Admin Dashboard Route */}
+          {activeTab === 'admin' && isOwner && (
+            <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />
+          )}
+
           {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && (
             <PolicyLayout activeTab={activeTab} setActiveTab={setActiveTab} />
           )}
