@@ -4,18 +4,23 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+// Clean up the private key to remove accidental quotes and fix \n formatting
+const cleanPrivateKey = rawPrivateKey 
+  ? rawPrivateKey.replace(/\\n/g, '\n').replace(/"/g, '').trim()
+  : undefined;
 
 // 1. Initialize Firebase using modular syntax
 if (!getApps().length) {
-  if (!projectId || !clientEmail || !privateKey) {
+  if (!projectId || !clientEmail || !cleanPrivateKey) {
     console.error("CRITICAL: Missing Firebase Environment Variables in Netlify!");
   } else {
     initializeApp({
       credential: cert({
         projectId: projectId,
         clientEmail: clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
+        privateKey: cleanPrivateKey,
       }),
     });
   }
