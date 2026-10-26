@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
@@ -16,7 +16,7 @@ const Toast = ({ msg }) => (
 );
 
 // --- Layout 1: Home / Explore Feed ---
-const HomeLayout = ({ setActiveTab, vaults }) => {
+const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId }) => {
   return (
     <div className="space-y-6 pb-24 animate-in fade-in">
       {/* Hero Banner */}
@@ -37,7 +37,14 @@ const HomeLayout = ({ setActiveTab, vaults }) => {
         <div className="grid grid-cols-2 gap-3">
           {vaults.length > 0 ? (
             vaults.map((vault) => (
-              <div key={vault.id} onClick={() => setActiveTab('vip')} className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-gray-600 transition-colors">
+              <div 
+                key={vault.id} 
+                onClick={() => {
+                  setSelectedVaultId(vault.id);
+                  setActiveTab('vip');
+                }} 
+                className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-gray-600 transition-colors"
+              >
                 <img src={vault.img || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=600&auto=format&fit=crop"} alt={vault.title} className="w-full h-full object-cover blur-sm opacity-60 group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 
@@ -170,9 +177,12 @@ const AuthLayout = ({ setActiveTab }) => {
 };
 
 // --- Layout 2: VIP Page with Bunny.net Video & M-Pesa ---
-const VIPLayout = ({ customerPhone, setCustomerPhone, handlePayment }) => {
+const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment }) => {
   const [position, setPosition] = useState({ top: '10%', left: '10%' });
   const [timeLeft, setTimeLeft] = useState("02:45:30");
+  
+  // Check if the current vault is unlocked
+  const isUnlocked = activeVault?.status === 'unlocked';
 
   useEffect(() => {
     const moveInterval = setInterval(() => {
@@ -187,70 +197,70 @@ const VIPLayout = ({ customerPhone, setCustomerPhone, handlePayment }) => {
   return (
     <div className="px-4 space-y-6 pb-24 animate-in fade-in">
       <div className="pt-4 pb-2 border-b border-gray-800/50">
-        <h1 className="text-2xl font-black text-white tracking-tight">Thika VIP Lounge</h1>
-        <p className="text-sm text-gray-400 mt-1">Exclusive weekend drops and unreleased sets.</p>
+        <h1 className="text-2xl font-black text-white tracking-tight">{activeVault?.title || 'Thika VIP Lounge'}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          {isUnlocked ? 'You have premium access to this content.' : 'Exclusive weekend drops and unreleased sets.'}
+        </p>
       </div>
 
-      {/* Live Bunny.net Video Player with Security Watermark Overlay */}
-      <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800">
-        <iframe 
-          src="https://iframe.mediadelivery.net/embed/789594/88d804ba-1b4f-4443-b238-c2b87fde1e81" 
-          loading="lazy" 
-          style={{ border: 'none', position: 'absolute', top: 0, height: '100%', width: '100%' }} 
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" 
-          allowFullScreen={true}
-        ></iframe>
-
-        {/* Anti-Sharing Watermark */}
-        <div className="absolute z-20 text-white/20 font-mono text-xs tracking-widest pointer-events-none font-bold transition-all duration-1000 select-none" style={{ top: position.top, left: position.left }}>
-          {customerPhone ? customerPhone : '+254 712 345 678'}
+      {isUnlocked ? (
+        /* Unlocked State: Show Video Player */
+        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800">
+          <iframe 
+            src="https://iframe.mediadelivery.net/embed/789594/88d804ba-1b4f-4443-b238-c2b87fde1e81" 
+            loading="lazy" 
+            style={{ border: 'none', position: 'absolute', top: 0, height: '100%', width: '100%' }} 
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" 
+            allowFullScreen={true}
+          ></iframe>
+          {/* Anti-Sharing Watermark */}
+          <div className="absolute z-20 text-white/20 font-mono text-xs tracking-widest pointer-events-none font-bold transition-all duration-1000 select-none" style={{ top: position.top, left: position.left }}>
+            {customerPhone ? customerPhone : '+254 712 345 678'}
+          </div>
         </div>
-      </div>
-
-      {/* Countdown Timer */}
-      <div className="bg-[#12151c] border border-[#00F0FF]/30 rounded-xl p-5 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00F0FF] to-transparent opacity-50"></div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-2">
-          <Lock size={12} className="text-[#00F0FF]"/> Next Exclusive Drop
-        </h2>
-        <div className="text-3xl font-black font-mono text-[#00F0FF] my-2">{timeLeft}</div>
-      </div>
-
-      {/* Phone Number Input for M-Pesa */}
-      <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-5 space-y-3">
-        <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">M-Pesa Phone Number</label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Phone size={16} className="text-[#00F0FF]" />
+      ) : (
+        /* Locked State: Show Placeholder & Payment Options */
+        <>
+          <div className="relative w-full aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800 flex flex-col items-center justify-center">
+            <Lock size={36} className="text-gray-500 mb-3" />
+            <span className="text-gray-400 text-sm font-bold uppercase tracking-widest">Content Locked</span>
           </div>
-          <input 
-            type="text" 
-            placeholder="0712345678" 
-            value={customerPhone}
-            onChange={(e) => setCustomerPhone(e.target.value)}
-            className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-[#00F0FF]"
-          />
-        </div>
-      </div>
 
-      {/* Pricing Buttons */}
-      <div className="space-y-4">
-        <button onClick={() => handlePayment('24-Hour Pass', 50)} className="w-full bg-[#161b22] border border-[#00F0FF]/30 hover:border-[#00F0FF] rounded-2xl p-4 flex items-center justify-between group transition-all">
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-10 h-10 rounded-full bg-[#00F0FF]/10 flex items-center justify-center"><Zap className="text-[#00F0FF]" size={18}/></div>
-            <div><h3 className="text-white font-bold text-sm">24-Hour Pass</h3><p className="text-gray-400 text-[10px]">Instant 1-day access</p></div>
+          <div className="bg-[#12151c] border border-[#00F0FF]/30 rounded-xl p-5 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00F0FF] to-transparent opacity-50"></div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-2">
+              <Lock size={12} className="text-[#00F0FF]"/> Next Exclusive Drop
+            </h2>
+            <div className="text-3xl font-black font-mono text-[#00F0FF] my-2">{timeLeft}</div>
           </div>
-          <div className="flex flex-col text-right"><span className="text-[#00F0FF] font-black">KES 50</span></div>
-        </button>
 
-        <button onClick={() => handlePayment('Monthly VIP', 500)} className="w-full bg-gradient-to-br from-green-600 to-green-800 border border-green-400 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_15px_rgba(22,163,74,0.2)]">
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center"><Crown className="text-white" size={18}/></div>
-            <div><h3 className="text-white font-bold text-sm">Monthly VIP</h3><p className="text-green-100/80 text-[10px]">Full archive access</p></div>
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-5 space-y-3">
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">M-Pesa Phone Number</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Phone size={16} className="text-[#00F0FF]" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="0712345678" 
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-[#00F0FF]"
+              />
+            </div>
           </div>
-          <div className="flex flex-col text-right"><span className="text-white font-black">KES 500</span></div>
-        </button>
-      </div>
+
+          <div className="space-y-4">
+            <button onClick={() => handlePayment('24-Hour Pass', activeVault?.price || 50)} className="w-full bg-[#161b22] border border-[#00F0FF]/30 hover:border-[#00F0FF] rounded-2xl p-4 flex items-center justify-between group transition-all">
+              <div className="flex items-center gap-4 text-left">
+                <div className="w-10 h-10 rounded-full bg-[#00F0FF]/10 flex items-center justify-center"><Zap className="text-[#00F0FF]" size={18}/></div>
+                <div><h3 className="text-white font-bold text-sm">24-Hour Pass</h3><p className="text-gray-400 text-[10px]">Instant 1-day access</p></div>
+              </div>
+              <div className="flex flex-col text-right"><span className="text-[#00F0FF] font-black">KES {activeVault?.price || 50}</span></div>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -299,7 +309,12 @@ export default function App() {
   const [vaults, setVaults] = useState([]);
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, price: 0, status: 'waiting' });
+  
+  // New States for Dynamic Unlocking
+  const [selectedVaultId, setSelectedVaultId] = useState('QCVwrsVuEtlAQ3PMziVs'); // Default fallback ID
+  const [activeVault, setActiveVault] = useState(null);
 
+  // One-time fetch for the Home Feed
   useEffect(() => {
     const fetchVaults = async () => {
       try {
@@ -312,6 +327,22 @@ export default function App() {
     };
     fetchVaults();
   }, []);
+
+  // Real-time listener for the currently selected Vault
+  useEffect(() => {
+    if (!selectedVaultId) return;
+    const vaultRef = doc(db, 'vaults', selectedVaultId);
+    
+    // onSnapshot automatically pushes updates to the app whenever the DB changes
+    const unsubscribe = onSnapshot(vaultRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setActiveVault({ id: docSnap.id, ...docSnap.data() });
+      }
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [selectedVaultId]);
 
   const handlePayment = async (plan, price) => {
     let formattedPhone = customerPhone.trim();
@@ -336,7 +367,8 @@ export default function App() {
         body: JSON.stringify({
           amount: price,
           msisdn: formattedPhone,
-          reference: `Thika Premium - ${plan}`
+          // PASSING THE DYNAMIC ID TO HASHPAY
+          reference: selectedVaultId 
         })
       });
 
@@ -409,9 +441,9 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="max-w-md mx-auto w-full">
-        {activeTab === 'home' && <HomeLayout setActiveTab={setActiveTab} vaults={vaults} />}
+        {activeTab === 'home' && <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} />}
         {activeTab === 'explore' && <ExploreLayout setActiveTab={setActiveTab} />}
-        {activeTab === 'vip' && <VIPLayout customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} />}
+        {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} />}
         {activeTab === 'profile' && <ProfileLayout setActiveTab={setActiveTab} />}
         {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} />}
       </main>
