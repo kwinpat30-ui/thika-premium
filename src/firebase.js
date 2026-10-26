@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDm4pafYz5P0VPNsdLBufOV9wH4wspcbLE",
+  apiKey: "AIzaSyDm4pafYz5POVPNsDLbuf0V9wHwspcbLE",
   authDomain: "thika-premium.firebaseapp.com",
   projectId: "thika-premium",
   storageBucket: "thika-premium.firebasestorage.app",
@@ -13,5 +14,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Cloud Firestore and get a reference to the service
+// Initialize Cloud Firestore and Auth
 export const db = getFirestore(app);
+export const auth = getAuth(app);
