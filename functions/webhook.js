@@ -6,12 +6,10 @@ const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-// Clean up the private key to remove accidental quotes and fix \n formatting
 const cleanPrivateKey = rawPrivateKey 
   ? rawPrivateKey.replace(/\\n/g, '\n').replace(/"/g, '').trim()
   : undefined;
 
-// 1. Initialize Firebase using modular syntax
 if (!getApps().length) {
   if (!projectId || !clientEmail || !cleanPrivateKey) {
     console.error("CRITICAL: Missing Firebase Environment Variables in Netlify!");
@@ -26,7 +24,6 @@ if (!getApps().length) {
   }
 }
 
-// 2. Safely connect to the database
 const db = getApps().length > 0 ? getFirestore() : null;
 
 export default async (req, context) => {
@@ -56,13 +53,27 @@ export default async (req, context) => {
          return new Response("Database initialization error", { status: 500 });
       }
 
-      await db.collection('vaults').doc('QCVwrsVuEtlAQ3PMziVs').update({
-        status: 'unlocked',
-        paidBy: payload.Msisdn,
-        unlockTime: FieldValue.serverTimestamp()
-      });
-      
-      console.log("Firestore updated to unlocked!");
+      // Extract the dynamic document ID sent from your frontend via HashPay
+      // Check HashPay's documentation if they use a different name like 'externalId' or 'metadata'
+      const targetVaultId = payload.reference || payload.metadata?.vaultId;
+
+      if (!targetVaultId) {
+        console.error("No reference ID found in payload. Cannot target a specific database document.");
+        // Fallback to the hardcoded ID temporarily just in case the frontend isn't updated yet
+        await db.collection('vaults').doc('QCVwrsVuEtlAQ3PMziVs').update({
+          status: 'unlocked',
+          paidBy: payload.Msisdn,
+          unlockTime: FieldValue.serverTimestamp()
+        });
+      } else {
+        // Unlock the specific dynamic document
+        await db.collection('vaults').doc(targetVaultId).update({
+          status: 'unlocked',
+          paidBy: payload.Msisdn,
+          unlockTime: FieldValue.serverTimestamp()
+        });
+        console.log(`Firestore document ${targetVaultId} updated to unlocked!`);
+      }
     }
 
     return new Response(JSON.stringify({ status: "success" }), { status: 200 });
