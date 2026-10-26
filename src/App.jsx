@@ -9,7 +9,7 @@ import {
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
-const OWNER_EMAIL = "kwinpat30@gmail.com"; // Secure Admin Owner Lock
+const OWNER_EMAIL = "kwinpat30@gmail.com"; 
 
 // --- Reusable Toast Component ---
 const Toast = ({ msg }) => (
@@ -35,7 +35,7 @@ const Logo = () => (
   </div>
 );
 
-// --- 1. Professional Top Navigation Bar ---
+// --- Top Navigation Bar ---
 const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner }) => {
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
@@ -106,14 +106,63 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
-// --- Admin Dashboard Layout ---
+// --- Admin Dashboard Layout with Auto-Uploader ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('50');
   const [mediaCount, setMediaCount] = useState('15 media');
   const [imgUrl, setImgUrl] = useState('');
-  const [bunnyVideoId, setBunnyVideoId] = useState(''); // NEW: Bunny Video ID state
+  const [bunnyVideoId, setBunnyVideoId] = useState(''); 
   const [loading, setLoading] = useState(false);
+  
+  const [isUploading, setIsUploading] = useState(false);
+  const BUNNY_LIBRARY_ID = "789594";
+  const BUNNY_API_KEY = "b04bfe12-c288-49c6-b90e1efb5008-874a-4003";
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setToastMsg("Initializing upload to Bunny.net...");
+
+    try {
+      const createRes = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`, {
+        method: 'POST',
+        headers: {
+          'AccessKey': BUNNY_API_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ title: file.name || "Admin Upload" })
+      });
+      
+      const createData = await createRes.json();
+      const newVideoId = createData.guid;
+
+      setToastMsg("Uploading file... Please do not close this page.");
+
+      const uploadRes = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${newVideoId}`, {
+        method: 'PUT',
+        headers: {
+          'AccessKey': BUNNY_API_KEY,
+        },
+        body: file
+      });
+
+      if (uploadRes.ok) {
+        setBunnyVideoId(newVideoId);
+        setToastMsg("Video successfully uploaded and linked!");
+      } else {
+        throw new Error("Failed to push file to Bunny.net");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setToastMsg("Error uploading video: " + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleCreateVault = async (e) => {
     e.preventDefault();
@@ -228,20 +277,38 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               />
             </div>
 
+            <div className="p-4 border-2 border-dashed border-gray-700 rounded-xl bg-black/50 hover:border-[#00F0FF] transition-colors">
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1"><Tv size={14} className="text-[#00F0FF]" /> Upload Secure Video</span>
+              </label>
+              <input 
+                type="file" 
+                accept="video/*"
+                onChange={handleVideoUpload}
+                disabled={isUploading}
+                className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#00F0FF]/10 file:text-[#00F0FF] hover:file:bg-[#00F0FF]/20 cursor-pointer disabled:opacity-50"
+              />
+              {isUploading && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-[#FFD700] font-bold animate-pulse">
+                  <Loader2 size={14} className="animate-spin" /> Uploading to secure server...
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
-                <Play size={12} className="text-[#00F0FF]" /> Bunny.net Video ID
+                <Play size={12} className="text-gray-500" /> Linked Bunny.net ID
               </label>
               <input 
                 type="text" 
                 value={bunnyVideoId} 
                 onChange={(e) => setBunnyVideoId(e.target.value)} 
-                placeholder="e.g. 88d804ba-1b4f-4443-b238-c2b87fde1e81" 
+                placeholder="Auto-fills after upload..." 
                 className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
               />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-3 rounded-xl text-xs transition-all shadow-lg disabled:opacity-50">
+            <button type="submit" disabled={loading || isUploading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-3 rounded-xl text-xs transition-all shadow-lg disabled:opacity-50">
               {loading ? "PUBLISHING..." : "Publish Vault Live"}
             </button>
           </form>
@@ -265,7 +332,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-2">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Support Contact</h3>
             <p className="text-xs text-gray-300">Telegram Handle: <span className="text-[#00F0FF] font-mono font-bold">@mr_exposes</span></p>
-            <p className="text-xs text-gray-300">Owner Email: <span className="text-[#FFD700] font-mono">{OWNER_EMAIL}</span></p>
+            <p className="text-xs text-gray-300">Owner Email: <span className="text-[#FFD700] font-mono">kwinpat30@gmail.com</span></p>
           </div>
         </div>
       </div>
@@ -1198,7 +1265,6 @@ export default function App() {
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
           
-          {/* Secured Admin Dashboard Route */}
           {activeTab === 'admin' && isOwner && (
             <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />
           )}
