@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { db } from './firebase';
+import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, where } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { db, auth } from './firebase';
 import { 
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
@@ -9,7 +9,6 @@ import {
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
-const auth = getAuth();
 const OWNER_EMAIL = "kwinpat30@gmail.com"; // Secure Admin Owner Lock
 
 // --- Reusable Toast Component ---
