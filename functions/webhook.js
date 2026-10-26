@@ -1,20 +1,20 @@
 import crypto from 'crypto';
-import admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-// 1. Initialize Firebase ONLY if variables are found
-if (!admin.apps.length) {
+// 1. Initialize Firebase using modular syntax
+if (!getApps().length) {
   if (!projectId || !clientEmail || !privateKey) {
     console.error("CRITICAL: Missing Firebase Environment Variables in Netlify!");
   } else {
-    admin.initializeApp({
-      credential: admin.credential.cert({
+    initializeApp({
+      credential: cert({
         projectId: projectId,
         clientEmail: clientEmail,
-        // The replace formats the literal \n characters properly for Firebase
         privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
     });
@@ -22,7 +22,7 @@ if (!admin.apps.length) {
 }
 
 // 2. Safely connect to the database
-const db = admin.apps.length > 0 ? admin.firestore() : null;
+const db = getApps().length > 0 ? getFirestore() : null;
 
 export default async (req, context) => {
   if (req.method !== 'POST') return new Response("Method Not Allowed", { status: 405 });
@@ -54,7 +54,7 @@ export default async (req, context) => {
       await db.collection('vaults').doc('QCVwrsVuEtlAQ3PMziVs').update({
         status: 'unlocked',
         paidBy: payload.Msisdn,
-        unlockTime: admin.firestore.FieldValue.serverTimestamp()
+        unlockTime: FieldValue.serverTimestamp()
       });
       
       console.log("Firestore updated to unlocked!");
