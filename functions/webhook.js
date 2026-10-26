@@ -1,18 +1,28 @@
 import crypto from 'crypto';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin safely
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+// 1. Initialize Firebase ONLY if variables are found
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-    }),
-  });
+  if (!projectId || !clientEmail || !privateKey) {
+    console.error("CRITICAL: Missing Firebase Environment Variables in Netlify!");
+  } else {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: projectId,
+        clientEmail: clientEmail,
+        // The replace formats the literal \n characters properly for Firebase
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
 }
 
-const db = admin.firestore();
+// 2. Safely connect to the database
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 export default async (req, context) => {
   if (req.method !== 'POST') return new Response("Method Not Allowed", { status: 405 });
@@ -36,6 +46,11 @@ export default async (req, context) => {
     if (payload.event === 'payment.success') {
       console.log(`Payment successful from: ${payload.Msisdn}`);
       
+      if (!db) {
+         console.error("Cannot unlock database: Firebase failed to initialize.");
+         return new Response("Database initialization error", { status: 500 });
+      }
+
       await db.collection('vaults').doc('QCVwrsVuEtlAQ3PMziVs').update({
         status: 'unlocked',
         paidBy: payload.Msisdn,
