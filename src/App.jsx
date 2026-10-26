@@ -13,7 +13,7 @@ const OWNER_EMAIL = "kwinpat30@gmail.com";
 
 // --- Reusable Toast Component ---
 const Toast = ({ msg }) => (
-  <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-green-500/90 backdrop-blur-sm text-black px-4 py-3 rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.4)] text-sm font-bold flex items-center gap-2 w-[90%] max-w-sm border border-green-400 animate-in fade-in slide-in-from-top-5">
+  <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[150] bg-green-500/90 backdrop-blur-sm text-black px-4 py-3 rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.4)] text-sm font-bold flex items-center gap-2 w-[90%] max-w-sm border border-green-400 animate-in fade-in slide-in-from-top-5">
     <CheckCircle2 size={18} /> {msg}
   </div>
 );
@@ -106,7 +106,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
-// --- Admin Dashboard Layout with Mixed Media Support ---
+// --- Admin Dashboard Layout ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('50');
@@ -574,172 +574,378 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   );
 };
 
-// --- Standard Layout Components for Other Tabs ---
-const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId }) => (
-  <div className="max-w-4xl mx-auto px-4 py-16 text-center text-gray-400">
-    <h1 className="text-2xl font-black text-white">{selectedCreator?.title || 'Creator Profile'}</h1>
-    <button onClick={() => setActiveTab('home')} className="mt-4 text-[#00F0FF] font-bold text-xs">Return to Feed</button>
-  </div>
-);
+// --- Fully Restored Creator Profile Layout ---
+const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId }) => {
+  if (!selectedCreator) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center text-gray-400">
+        <p>No creator selected.</p>
+        <button onClick={() => setActiveTab('home')} className="mt-4 text-[#00F0FF] font-bold text-xs">Return to Feed</button>
+      </div>
+    );
+  }
 
-const MembershipLayout = ({ setActiveTab }) => (
-  <div className="max-w-xl mx-auto px-4 py-8 space-y-6 text-center">
-    <h1 className="text-2xl font-black text-white">Membership</h1>
-    <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] font-bold">Back to Home</button>
-  </div>
-);
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
+      <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
+        <img src={selectedCreator.img} alt={selectedCreator.title} className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
+        
+        <div className="relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#00F0FF]/50 shrink-0 shadow-[0_0_25px_rgba(0,240,255,0.3)]">
+          <img src={selectedCreator.img} alt={selectedCreator.title} className="w-full h-full object-cover" />
+        </div>
 
-const RestoreLayout = ({ setActiveTab }) => (
-  <div className="max-w-md mx-auto px-4 py-8 text-center">
-    <h1 className="text-2xl font-black text-white">Restore Access</h1>
-    <button onClick={() => setActiveTab('home')} className="mt-4 text-xs text-[#00F0FF] font-bold">Back to Home</button>
-  </div>
-);
+        <div className="relative z-20 text-center md:text-left space-y-2 flex-1">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Verified Creator</span>
+            <span className="text-xs text-gray-400 font-mono">{selectedCreator.mediaList?.length || 1} Media Items</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-white">{selectedCreator.title}</h1>
+          <p className="text-gray-300 text-xs max-w-lg leading-relaxed">Exclusive performer and content creator. Subscribe to unlock full archive streams, weekend drops, and private clips.</p>
+          
+          <div className="pt-2 flex justify-center md:justify-start gap-3">
+            <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-2.5 rounded-xl text-xs transition-all shadow-lg">
+              Unlock Vault (KES {selectedCreator.price || 50})
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-const AuthLayout = ({ setActiveTab }) => (
-  <div className="max-w-md mx-auto px-4 py-8 text-center">
-    <h1 className="text-2xl font-black text-white">Account Authentication</h1>
-    <button onClick={() => setActiveTab('home')} className="mt-4 text-xs text-[#00F0FF] font-bold">Back to Home</button>
-  </div>
-);
+// --- Fully Restored Membership Layout ---
+const MembershipLayout = ({ setActiveTab }) => {
+  return (
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">Membership</h1>
+        <p className="text-gray-400 text-xs max-w-md mx-auto">
+          A free account keeps your subscriptions safe and works on every device. Paying never needs one.
+        </p>
+      </div>
 
-const PolicyLayout = ({ setActiveTab }) => (
-  <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-    <h1 className="text-2xl font-black text-white">Policies</h1>
-    <button onClick={() => setActiveTab('home')} className="mt-4 text-xs text-[#00F0FF] font-bold">Back to Home</button>
-  </div>
-);
+      <div className="space-y-3">
+        {[
+          { icon: <Smartphone className="text-[#00F0FF]" size={20}/>, title: "Your subscriptions on every device", desc: "Sign in on a phone, a tablet or a computer and keep watching. No codes to type." },
+          { icon: <Star className="text-[#FFD700]" size={20}/>, title: "Follow models and save favourites", desc: "Keep the creators and videos you like in one place." },
+          { icon: <History className="text-green-400" size={20}/>, title: "Watch history", desc: "Pick up where you left off." },
+          { icon: <Crown className="text-purple-400" size={20}/>, title: "Lifetime subscriptions", desc: "A lifetime subscription is kept on your account, so it is never lost with a device." }
+        ].map((item, idx) => (
+          <div key={idx} className="bg-[#12151c] border border-gray-800 rounded-xl p-4 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-gray-800 shrink-0">
+              {item.icon}
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-xs">{item.title}</h3>
+              <p className="text-gray-400 text-[11px] mt-0.5 leading-relaxed">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-const Footer = ({ setActiveTab }) => (
-  <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-6 mt-16 text-xs text-center text-gray-600">
-    © 2026 Thika Superhighway Premium. All rights reserved.
-  </footer>
-);
+      <div className="space-y-3 pt-4">
+        <button onClick={() => setActiveTab('signup')} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+          Create a free account
+        </button>
+        <button onClick={() => setActiveTab('login')} className="w-full bg-[#12151c] hover:bg-gray-800 text-white font-bold py-4 rounded-xl text-xs border border-gray-800 transition-colors">
+          Log in
+        </button>
+      </div>
+    </div>
+  );
+};
 
-// --- Main App Controller ---
-export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [toastMsg, setToastMsg] = useState('');
-  const [vaults, setVaults] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('thika_customer_phone') || '');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [paymentModal, setPaymentModal] = useState({ isOpen: false, price: 0, status: 'waiting' });
-  
-  const [selectedVaultId, setSelectedVaultId] = useState('');
-  const [selectedCreator, setSelectedCreator] = useState(null);
-  const [activeVault, setActiveVault] = useState(null);
+// --- Fully Restored Restore Layout ---
+const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
+  const [phone, setPhone] = useState('');
+  const [mpesaCode, setMpesaCode] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const isOwner = currentUser && currentUser.email === OWNER_EMAIL;
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    setToastMsg("Logged out");
-    setTimeout(() => setToastMsg(''), 2000);
-  };
-
-  useEffect(() => {
-    if (customerPhone) localStorage.setItem('thika_customer_phone', customerPhone);
-  }, [customerPhone]);
-
-  useEffect(() => {
-    const fetchVaults = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "vaults"));
-        const vaultData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setVaults(vaultData);
-        if (vaultData.length > 0 && !selectedVaultId) setSelectedVaultId(vaultData[0].id);
-      } catch (error) {
-        console.error("Error fetching vaults:", error);
-      }
-    };
-    fetchVaults();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedVaultId) return;
-    const vaultRef = doc(db, 'vaults', selectedVaultId);
-    const unsubscribe = onSnapshot(vaultRef, (docSnap) => {
-      if (docSnap.exists()) setActiveVault({ id: docSnap.id, ...docSnap.data() });
-    });
-    return () => unsubscribe();
-  }, [selectedVaultId]);
-
-  const handlePayment = async (plan, price) => {
-    let formattedPhone = customerPhone.trim();
-    if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.slice(1);
-    if (!formattedPhone || formattedPhone.length < 10) {
-      setToastMsg("Enter a valid M-Pesa phone number!");
+  const handleRestore = async (e) => {
+    e.preventDefault();
+    if (!phone || !mpesaCode) {
+      setToastMsg("Please provide both your phone number and payment code.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-
-    setPaymentModal({ isOpen: true, price, status: 'waiting' });
-
+    
+    setLoading(true);
     try {
-      const response = await fetch("/.netlify/functions/stk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: price, msisdn: formattedPhone, reference: selectedVaultId })
-      });
-      const data = await response.json();
-      if (response.ok && (data.success || data.ResponseCode === "0" || data.ResponseCode === 0)) {
-        setPaymentModal(prev => ({ ...prev, status: 'success' }));
+      const q = query(
+        collection(db, "transactions"), 
+        where("mpesaCode", "==", mpesaCode.trim().toUpperCase()),
+        where("phone", "==", phone.trim())
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setToastMsg("Access code verified! Restoring session...");
         setTimeout(() => {
-          setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-          setToastMsg("STK push sent! Check your phone.");
-          setTimeout(() => setToastMsg(''), 3000);
+          setToastMsg('');
+          setActiveTab('vip');
         }, 2000);
       } else {
-        setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-        setToastMsg("Payment failed: " + (data.message || "Try again."));
-        setTimeout(() => setToastMsg(''), 3000);
+        setToastMsg("No matching transaction found. Check code & phone.");
+        setTimeout(() => setToastMsg(''), 4000);
       }
     } catch (error) {
-      setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-      setToastMsg("Connection error.");
-      setTimeout(() => setToastMsg(''), 3000);
+      console.error("Restore error:", error);
+      setToastMsg("Error verifying transaction. Try again.");
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between">
-      {toastMsg && <Toast msg={toastMsg} />}
-
-      {paymentModal.isOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#12151c] border border-gray-800 rounded-2xl w-full max-w-sm p-6 flex flex-col items-center text-center shadow-2xl">
-            <Loader2 size={32} className="text-green-500 animate-spin mb-4" />
-            <h3 className="text-lg font-black text-white mb-2">Prompting M-Pesa</h3>
-            <p className="text-sm text-gray-400">Check <span className="text-[#00F0FF] font-mono">{customerPhone}</span> for KES {paymentModal.price}.</p>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} />
-        
-        <main>
-          {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
-            <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
-          )}
-          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
-          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} />}
-          {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
-          {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
-          {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} />}
-          {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} />}
-          {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} />}
-          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && <PolicyLayout setActiveTab={setActiveTab} />}
-        </main>
+    <div className="max-w-md mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">Restore access</h1>
+        <p className="text-gray-400 text-xs">Enter your M-Pesa transaction receipt code to recover your active session.</p>
       </div>
 
-      <Footer setActiveTab={setActiveTab} />
+      <form onSubmit={handleRestore} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone number you paid with</label>
+          <input 
+            type="text" 
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="0712 345 678" 
+            className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Payment code</label>
+          <input 
+            type="text" 
+            value={mpesaCode}
+            onChange={(e) => setMpesaCode(e.target.value.toUpperCase())}
+            placeholder="E.G. SJK3ABC12D" 
+            className="w-full bg-black text-white font-mono uppercase text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+          {loading ? "VERIFYING RECEIPT..." : "Restore access"}
+        </button>
+      </form>
+
+      <div className="text-center">
+        <button onClick={() => setActiveTab('membership')} className="text-xs text-gray-400 hover:text-white">
+          Back to <span className="text-[#00F0FF] font-bold">Membership</span>
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+// --- Fully Restored Auth Layout ---
+const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
+  const [method, setMethod] = useState('phone');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('phone-input');
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [isAdult, setIsAdult] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (method === 'phone' && !window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {}
+        });
+      } catch (e) {
+        console.error("Recaptcha error:", e);
+      }
+    }
+  }, [method]);
+
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    if (!isLoginMode && !isAdult) {
+      setToastMsg("You must confirm you are 18 or older to register.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    if (!email || !password) {
+      setToastMsg("Please fill in all fields.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    setLoading(true);
+    try {
+      if (isLoginMode) {
+        await signInWithEmailAndPassword(auth, email, password);
+        setToastMsg("Login successful!");
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setToastMsg("Account created successfully!");
+      }
+      setTimeout(() => {
+        setToastMsg('');
+        setActiveTab('home');
+      }, 1500);
+    } catch (error) {
+      setToastMsg("Error: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!isLoginMode && !isAdult) {
+      setToastMsg("You must confirm you are 18 or older to register.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    let formattedPhone = phone.trim();
+    if (formattedPhone.startsWith('0')) formattedPhone = '+254' + formattedPhone.slice(1);
+    if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone;
+
+    if (formattedPhone.length < 10) {
+      setToastMsg("Please enter a valid phone number.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+      setStep('otp-input');
+      setToastMsg("Verification code sent via SMS!");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (error) {
+      console.error("SMS error:", error);
+      setToastMsg("Failed to send SMS: " + error.message);
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length < 6) {
+      setToastMsg("Enter the 6-digit verification code.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await confirmationResult.confirm(otp);
+      setToastMsg("Phone authentication successful!");
+      setTimeout(() => {
+        setToastMsg('');
+        setActiveTab('home');
+      }, 1500);
+    } catch (error) {
+      setToastMsg("Invalid verification code.");
+      setTimeout(() => setToastMsg(''), 4000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">{isLoginMode ? 'Welcome back' : 'Create an account'}</h1>
+        <p className="text-gray-400 text-xs">Secure your creator subscriptions across all your devices.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 bg-[#12151c] p-1.5 rounded-xl border border-gray-800">
+        <button 
+          type="button" 
+          onClick={() => { setMethod('phone'); setStep('phone-input'); }}
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'phone' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+        >
+          📱 Phone (SMS OTP)
+        </button>
+        <button 
+          type="button" 
+          onClick={() => setMethod('email')}
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'email' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+        >
+          ✉️ Email & Password
+        </button>
+      </div>
+
+      {method === 'email' ? (
+        <form onSubmit={handleEmailSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
+          <div>
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email address</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com" 
+              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••" 
+              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+            />
+          </div>
+
+          {!isLoginMode && (
+            <div className="flex items-start gap-3 pt-2">
+              <input 
+                type="checkbox" 
+                id="ageCheckEmail" 
+                checked={isAdult}
+                onChange={(e) => setIsAdult(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+              />
+              <label htmlFor="ageCheckEmail" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
+                I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
+              </label>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+            {loading ? "PROCESSING..." : (isLoginMode ? 'Log in with Email' : 'Create account')}
+          </button>
+        </form>
+      ) : (
+        <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+          {step === 'phone-input' ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone size={16} className="text-[#00F0FF]" />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="0712 345 678" 
+                    className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#00F0FF]"
+                  />
+                </div>
+              </div>
+
+              {!isLoginMode && (
+                <div className="flex items-start gap-3 pt-2">
+                  <input 
+                    type="
