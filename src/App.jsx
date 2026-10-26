@@ -112,12 +112,13 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [price, setPrice] = useState('50');
   const [mediaCount, setMediaCount] = useState('15 media');
   const [imgUrl, setImgUrl] = useState('');
+  const [bunnyVideoId, setBunnyVideoId] = useState(''); // NEW: Bunny Video ID state
   const [loading, setLoading] = useState(false);
 
   const handleCreateVault = async (e) => {
     e.preventDefault();
-    if (!title || !imgUrl) {
-      setToastMsg("Please provide a title and thumbnail image URL.");
+    if (!title || !imgUrl || !bunnyVideoId) {
+      setToastMsg("Please provide a title, image URL, and Bunny.net Video ID.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
@@ -129,13 +130,15 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         price: Number(price),
         mediaCount: mediaCount.trim(),
         img: imgUrl.trim(),
+        bunnyVideoId: bunnyVideoId.trim(),
         status: 'locked',
         createdAt: new Date()
       });
 
-      setVaults(prev => [...prev, { id: docRef.id, title, price: Number(price), mediaCount, img: imgUrl, status: 'locked' }]);
+      setVaults(prev => [...prev, { id: docRef.id, title, price: Number(price), mediaCount, img: imgUrl, bunnyVideoId, status: 'locked' }]);
       setTitle('');
       setImgUrl('');
+      setBunnyVideoId('');
       setToastMsg("New content vault published successfully!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
@@ -225,6 +228,19 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
+                <Play size={12} className="text-[#00F0FF]" /> Bunny.net Video ID
+              </label>
+              <input 
+                type="text" 
+                value={bunnyVideoId} 
+                onChange={(e) => setBunnyVideoId(e.target.value)} 
+                placeholder="e.g. 88d804ba-1b4f-4443-b238-c2b87fde1e81" 
+                className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
+              />
+            </div>
+
             <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-3 rounded-xl text-xs transition-all shadow-lg disabled:opacity-50">
               {loading ? "PUBLISHING..." : "Publish Vault Live"}
             </button>
@@ -263,8 +279,8 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               <tr>
                 <th className="pb-3">Thumbnail</th>
                 <th className="pb-3">Title</th>
+                <th className="pb-3">Video ID</th>
                 <th className="pb-3">Price</th>
-                <th className="pb-3">Media</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -275,8 +291,8 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
                     <img src={vault.img || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=200&auto=format&fit=crop"} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" />
                   </td>
                   <td className="py-3 font-bold text-white">{vault.title}</td>
+                  <td className="py-3 text-gray-500 font-mono text-[9px]">{vault.bunnyVideoId ? vault.bunnyVideoId.substring(0,8) + '...' : 'None'}</td>
                   <td className="py-3 text-[#FFD700] font-mono">KES {vault.price || 50}</td>
-                  <td className="py-3 text-gray-400">{vault.mediaCount || '15 media'}</td>
                   <td className="py-3 text-right space-x-2">
                     <button onClick={() => { setSelectedVaultId(vault.id); setActiveTab('vip'); }} className="text-[#00F0FF] hover:underline px-2 py-1 font-bold">View</button>
                     <button onClick={() => handleDeleteVault(vault.id)} className="text-red-400 hover:text-red-300 p-1 rounded"><Trash2 size={16}/></button>
@@ -372,6 +388,8 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   
   const isUnlocked = activeVault?.status === 'unlocked';
 
+  const currentVideoId = activeVault?.bunnyVideoId || '88d804ba-1b4f-4443-b238-c2b87fde1e81';
+
   useEffect(() => {
     const moveInterval = setInterval(() => {
       setPosition({ 
@@ -402,7 +420,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
       {isUnlocked ? (
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.9)] border border-gray-800">
           <iframe 
-            src="https://iframe.mediadelivery.net/embed/789594/88d804ba-1b4f-4443-b238-c2b87fde1e81" 
+            src={`https://iframe.mediadelivery.net/embed/789594/${currentVideoId}?autoplay=true`} 
             loading="lazy" 
             style={{ border: 'none', position: 'absolute', top: 0, height: '100%', width: '100%' }} 
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" 
