@@ -112,20 +112,17 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [price, setPrice] = useState('50');
   const [mediaCount, setMediaCount] = useState('15 media');
   const [imgUrl, setImgUrl] = useState('');
-  const [mediaList, setMediaList] = useState([]); // NEW: Array of uploaded items ({ type: 'video'|'image', urlOrId: '', thumb: '' })
+  const [mediaList, setMediaList] = useState([]); 
   const [loading, setLoading] = useState(false);
   
-  // Cloudinary Settings
   const [isImageUploading, setIsImageUploading] = useState(false);
   const CLOUDINARY_CLOUD_NAME = "dfw62f3ry"; 
   const CLOUDINARY_UPLOAD_PRESET = "thika_preset"; 
 
-  // Bunny.net Settings
   const [isUploading, setIsUploading] = useState(false);
   const BUNNY_LIBRARY_ID = "789594";
   const BUNNY_API_KEY = "b04bfe12-c288-49c6-b90e1efb5008-874a-4003";
 
-  // Upload Thumbnail Cover
   const handleCoverUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -156,7 +153,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     }
   };
 
-  // Add Item to Media List (Video or Image)
   const handleMediaUpload = async (e, type) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -225,7 +221,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         price: Number(price),
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
-        mediaList: mediaList, // Save array of mixed content
+        mediaList: mediaList, 
         status: 'locked',
         createdAt: new Date()
       });
@@ -310,7 +306,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               </div>
             </div>
 
-            {/* Cover Thumbnail */}
             <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
                 <ImageIcon size={14} className="text-[#00F0FF]" /> Cover Thumbnail Image
@@ -319,7 +314,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               {imgUrl && <p className="text-[10px] text-green-400 mt-1">Cover set successfully!</p>}
             </div>
 
-            {/* Upload Videos */}
             <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
                 <Film size={14} className="text-[#00F0FF]" /> Add Secure Videos (Bunny.net)
@@ -328,7 +322,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               {isUploading && <p className="text-[10px] text-[#FFD700] animate-pulse mt-1">Uploading videos...</p>}
             </div>
 
-            {/* Upload Gallery Photos */}
             <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
                 <ImageIcon size={14} className="text-green-400" /> Add Gallery Photos (Cloudinary)
@@ -457,7 +450,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [timeLeft, setTimeLeft] = useState("02:45:30");
-  const [activeModalItem, setActiveModalItem] = useState(null); // Zoomed media item
+  const [activeModalItem, setActiveModalItem] = useState(null); 
   
   const isUnlocked = activeVault?.status === 'unlocked';
   const mediaList = activeVault?.mediaList || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
@@ -519,15 +512,15 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                     loading="lazy" 
                     style={{ border: 'none', position: 'absolute', top: 0, height: '100%', width: '100%' }} 
                     allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" 
-                    allowFullScreen={true}
-                  ></iframe>
+                    allowFullScreen
+                  />
                 ) : (
                   <img src={activeModalItem.urlOrId} alt="" className="w-full h-full object-contain" />
                 )}
 
                 {/* WATERMARK */}
                 <div className="absolute z-20 text-white/25 font-mono text-xs tracking-widest pointer-events-none font-bold select-none bg-black/10 px-2 py-1 rounded backdrop-blur-[1px]" style={{ top: position.top, left: position.left }}>
-                  {customerPhone || '+254 712 345 678'} • {currentTime}
+                  {customerPhone || '+254 712 345 678'} &bull; {currentTime}
                 </div>
               </div>
 
@@ -740,3 +733,13 @@ export default function App() {
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
           {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} />}
+          {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} />}
+          {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} />}
+          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && <PolicyLayout setActiveTab={setActiveTab} />}
+        </main>
+      </div>
+
+      <Footer setActiveTab={setActiveTab} />
+    </div>
+  );
+}
