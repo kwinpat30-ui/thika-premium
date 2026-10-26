@@ -5,7 +5,7 @@ import {
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
   Search, Filter, Phone, LockKeyhole, History,
-  Loader2, MessageSquare
+  Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart
 } from 'lucide-react';
 
 // --- Reusable Toast Component ---
@@ -15,53 +15,138 @@ const Toast = ({ msg }) => (
   </div>
 );
 
-// --- Layout 1: Home / Explore Feed ---
-const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId }) => {
+// --- 1. Professional Top Navigation Bar ---
+const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery }) => {
   return (
-    <div className="space-y-6 pb-24 animate-in fade-in">
-      {/* Hero Banner */}
-      <div className="relative h-48 rounded-2xl overflow-hidden mx-4 mt-4 shadow-[0_0_15px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('vip')}>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
-        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-        <div className="absolute bottom-4 left-4 z-20">
-          <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider mb-2 inline-block">New Drop</span>
-          <h2 className="text-xl font-black text-white leading-tight shadow-black drop-shadow-md">The Thika Expressway VIP Experience</h2>
+    <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        
+        {/* Logo */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FFD700] to-[#00F0FF] flex items-center justify-center font-black text-black text-lg">
+            T
+          </div>
+          <div className="flex flex-col uppercase tracking-tighter font-black leading-none">
+            <span className="text-[#00F0FF] text-base">Thika</span>
+            <span className="text-[#FFD700] text-[10px] tracking-[0.2em]">Expressway</span>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="hidden md:flex relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input 
+            type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search videos, creators, tags..." 
+            className="w-full bg-[#12151c] text-white text-xs border border-gray-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors"
+          />
+        </div>
+
+        {/* Subscribe CTA Button */}
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setActiveTab('vip')} 
+            className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5"
+          >
+            <Crown size={14} /> Subscribe
+          </button>
         </div>
       </div>
 
-      {/* Trending Categories / Firebase Vaults */}
-      <div className="px-4">
-        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-3">
-          <Flame size={16} className="text-[#FFD700]"/> Live Content Vaults
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
+      {/* Category Navigation Bar */}
+      <div className="max-w-6xl mx-auto flex overflow-x-auto gap-6 pt-3 pb-1 border-t border-gray-800/50 mt-3 text-xs font-bold scrollbar-none">
+        {[
+          { id: 'home', label: 'Featured' },
+          { id: 'creators', label: 'Creators' },
+          { id: 'trending', label: 'Trending' },
+          { id: 'latest', label: 'Latest' },
+          { id: 'popular', label: 'Most Popular' },
+          { id: 'toprated', label: 'Top Rated' }
+        ].map((tab) => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${activeTab === tab.id ? 'text-[#00F0FF] border-[#00F0FF]' : 'text-gray-400 border-transparent hover:text-white'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </header>
+  );
+};
+
+// --- 2. Creator Feed / Vault Grid Layout ---
+const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
+      
+      {/* Hero Banner */}
+      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('vip')}>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
+        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        <div className="absolute bottom-6 left-6 z-20 space-y-2">
+          <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
+          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Expressway VIP Experience</h2>
+          <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
+        </div>
+      </div>
+
+      {/* Grid of Vaults */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+            <Flame size={16} className="text-[#FFD700]"/> Exclusive Content Vaults
+          </h3>
+          <span className="text-xs text-[#00F0FF] cursor-pointer hover:underline" onClick={() => setActiveTab('trending')}>View all</span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {vaults.length > 0 ? (
             vaults.map((vault) => (
               <div 
                 key={vault.id} 
                 onClick={() => {
                   setSelectedVaultId(vault.id);
+                  setSelectedCreator(vault);
                   setActiveTab('vip');
                 }} 
-                className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-gray-600 transition-colors"
+                className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-[#00F0FF]/50 transition-all shadow-lg"
               >
-                <img src={vault.img || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=600&auto=format&fit=crop"} alt={vault.title} className="w-full h-full object-cover blur-sm opacity-60 group-hover:scale-110 transition-transform duration-500" />
+                <img src={vault.img || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=600&auto=format&fit=crop"} alt={vault.title} className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="absolute top-3 left-3 flex gap-1">
+                  <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-md">
+                    HD
+                  </span>
+                </div>
+                <div className="absolute top-3 right-3">
+                  <span className="bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-gray-300 border border-gray-700">
+                    {vault.mediaCount || '15 media'}
+                  </span>
+                </div>
+
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-80 group-hover:scale-110 transition-transform">
                   <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-gray-500/50">
-                    <Lock size={18} className="text-gray-300" />
+                    <Lock size={18} className="text-[#FFD700]" />
                   </div>
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
-                  <span className="text-[9px] text-[#00F0FF] uppercase tracking-wider font-bold">VIP Vault</span>
-                  <h4 className="text-white font-bold text-sm leading-tight line-clamp-2">{vault.title || "Exclusive Stream"}</h4>
+                  <span className="text-[9px] text-[#00F0FF] uppercase tracking-wider font-bold">VIP Creator</span>
+                  <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title || "Exclusive Stream"}</h4>
+                  <div className="text-[10px] text-gray-400 mt-0.5 flex justify-between items-center">
+                    <span>KES {vault.price || 50} access</span>
+                    <span className="text-[#FFD700] flex items-center gap-1"><Star size={10} fill="#FFD700"/> 4.9</span>
+                  </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="col-span-2 text-center py-8 text-gray-500 text-xs">Loading secure vaults from database...</div>
+            <div className="col-span-full text-center py-12 text-gray-500 text-xs">Loading secure vaults from database...</div>
           )}
         </div>
       </div>
@@ -69,119 +154,12 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId }) => {
   );
 };
 
-// --- Layout 4: Explore & Search ---
-const ExploreLayout = ({ setActiveTab }) => {
-  const categories = ["All", "Nightlife", "Vlogs", "Uncensored", "Music", "Events"];
-  const [activeCat, setActiveCat] = useState("All");
-
-  return (
-    <div className="px-4 space-y-6 pb-24 animate-in fade-in">
-      <div className="relative mt-4 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search size={18} className="text-gray-500" />
-        </div>
-        <input 
-          type="text" 
-          placeholder="Search exclusive drops..." 
-          className="w-full bg-[#12151c] text-white border border-gray-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#00F0FF]/50 transition-colors placeholder-gray-600 text-sm"
-        />
-        <button className="absolute inset-y-0 right-0 pr-3 flex items-center">
-          <Filter size={18} className="text-[#00F0FF]" />
-        </button>
-      </div>
-
-      <div className="flex overflow-x-auto gap-2 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {categories.map((cat) => (
-          <button 
-            key={cat}
-            onClick={() => setActiveCat(cat)}
-            className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold border transition-all ${activeCat === cat ? 'bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/50 shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'bg-[#12151c] text-gray-400 border-gray-800 hover:border-gray-600'}`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} onClick={() => setActiveTab('vip')} className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800">
-            <img src={`https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&auto=format&fit=crop&sig=${i}`} alt="Thumbnail" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-500 blur-[2px]" />
-            <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-gray-500/50">
-              <Lock size={14} className="text-gray-300" />
-            </div>
-            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black to-transparent p-2 pt-6">
-              <h4 className="text-white font-bold text-xs leading-tight line-clamp-2">Locked Vault #{i}</h4>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// --- Layout 5: Login / Authentication ---
-const AuthLayout = ({ setActiveTab }) => {
-  const [step, setStep] = useState('phone');
-
-  return (
-    <div className="px-6 flex flex-col justify-center min-h-[75vh] animate-in slide-in-from-bottom-10 fade-in">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-[#00F0FF]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#00F0FF]/30 shadow-[0_0_20px_rgba(0,240,255,0.2)]">
-          <LockKeyhole size={32} className="text-[#00F0FF]" />
-        </div>
-        <h1 className="text-2xl font-black text-white">Access the Vault</h1>
-        <p className="text-gray-400 text-sm mt-2">
-          {step === 'phone' ? "Enter your phone number to login or subscribe via HashPay." : "Enter the 4-digit code sent to your phone."}
-        </p>
-      </div>
-
-      {step === 'phone' ? (
-        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Phone size={18} className="text-gray-500" />
-            </div>
-            <input 
-              type="tel" 
-              placeholder="0712 345 678" 
-              className="w-full bg-[#12151c] text-white font-mono text-lg border border-gray-800 rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors"
-            />
-          </div>
-          <button onClick={() => setStep('otp')} className="w-full bg-[#00F0FF] text-black font-black py-4 rounded-xl hover:bg-[#00c4d1] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.3)]">
-            SEND CODE
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-          <div className="flex justify-center gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <input
-                key={i}
-                type="text"
-                maxLength="1"
-                className="w-14 h-14 bg-[#12151c] text-white text-center text-2xl font-black border border-gray-800 rounded-xl focus:outline-none focus:border-[#00F0FF] transition-colors"
-                placeholder="-"
-              />
-            ))}
-          </div>
-          <button onClick={() => setActiveTab('home')} className="w-full bg-[#00F0FF] text-black font-black py-4 rounded-xl hover:bg-[#00c4d1] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.3)]">
-            VERIFY & ENTER
-          </button>
-          <button onClick={() => setStep('phone')} className="w-full text-center text-xs text-gray-500 hover:text-white transition-colors">
-            Change Phone Number
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- Layout 2: VIP Page with Bunny.net Video & M-Pesa ---
+// --- VIP Player & Watermark Layout ---
 const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment }) => {
-  const [position, setPosition] = useState({ top: '10%', left: '10%' });
+  const [position, setPosition] = useState({ top: '15%', left: '15%' });
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [timeLeft, setTimeLeft] = useState("02:45:30");
   
-  // Check if the current vault is unlocked
   const isUnlocked = activeVault?.status === 'unlocked';
 
   useEffect(() => {
@@ -191,21 +169,28 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
         left: `${Math.floor(Math.random() * 60) + 10}%` 
       });
     }, 4000);
-    return () => clearInterval(moveInterval);
+
+    const clockInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+
+    return () => {
+      clearInterval(moveInterval);
+      clearInterval(clockInterval);
+    };
   }, []);
 
   return (
-    <div className="px-4 space-y-6 pb-24 animate-in fade-in">
-      <div className="pt-4 pb-2 border-b border-gray-800/50">
+    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 animate-in fade-in">
+      <div className="border-b border-gray-800/80 pb-4">
         <h1 className="text-2xl font-black text-white tracking-tight">{activeVault?.title || 'Thika VIP Lounge'}</h1>
         <p className="text-sm text-gray-400 mt-1">
-          {isUnlocked ? 'You have premium access to this content.' : 'Exclusive weekend drops and unreleased sets.'}
+          {isUnlocked ? 'You have active premium access to this content stream.' : 'Unlock exclusive weekend drops and unreleased high-def sets instantly.'}
         </p>
       </div>
 
       {isUnlocked ? (
-        /* Unlocked State: Show Video Player */
-        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800">
+        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.9)] border border-gray-800">
           <iframe 
             src="https://iframe.mediadelivery.net/embed/789594/88d804ba-1b4f-4443-b238-c2b87fde1e81" 
             loading="lazy" 
@@ -213,29 +198,28 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;" 
             allowFullScreen={true}
           ></iframe>
-          {/* Anti-Sharing Watermark */}
-          <div className="absolute z-20 text-white/20 font-mono text-xs tracking-widest pointer-events-none font-bold transition-all duration-1000 select-none" style={{ top: position.top, left: position.left }}>
-            {customerPhone ? customerPhone : '+254 712 345 678'}
+          <div className="absolute z-20 text-white/25 font-mono text-xs tracking-widest pointer-events-none font-bold select-none bg-black/10 px-2 py-1 rounded backdrop-blur-[1px]" style={{ top: position.top, left: position.left }}>
+            {customerPhone ? customerPhone : '+254 712 345 678'} • {currentTime}
           </div>
         </div>
       ) : (
-        /* Locked State: Show Placeholder & Payment Options */
         <>
           <div className="relative w-full aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800 flex flex-col items-center justify-center">
-            <Lock size={36} className="text-gray-500 mb-3" />
-            <span className="text-gray-400 text-sm font-bold uppercase tracking-widest">Content Locked</span>
+            <Lock size={40} className="text-[#FFD700] mb-3 animate-pulse" />
+            <span className="text-white font-black text-sm uppercase tracking-widest">Content Locked</span>
+            <span className="text-gray-400 text-xs mt-1">Complete M-Pesa payment below to reveal stream</span>
           </div>
 
           <div className="bg-[#12151c] border border-[#00F0FF]/30 rounded-xl p-5 text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00F0FF] to-transparent opacity-50"></div>
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-2">
-              <Lock size={12} className="text-[#00F0FF]"/> Next Exclusive Drop
+              <Lock size={12} className="text-[#00F0FF]"/> Limited Access Timer
             </h2>
             <div className="text-3xl font-black font-mono text-[#00F0FF] my-2">{timeLeft}</div>
           </div>
 
           <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-5 space-y-3">
-            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">M-Pesa Phone Number</label>
+            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">M-Pesa Phone Number (Auto-saved)</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Phone size={16} className="text-[#00F0FF]" />
@@ -251,12 +235,12 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
           </div>
 
           <div className="space-y-4">
-            <button onClick={() => handlePayment('24-Hour Pass', activeVault?.price || 50)} className="w-full bg-[#161b22] border border-[#00F0FF]/30 hover:border-[#00F0FF] rounded-2xl p-4 flex items-center justify-between group transition-all">
+            <button onClick={() => handlePayment('24-Hour Pass', activeVault?.price || 50)} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(255,215,0,0.2)] transition-all">
               <div className="flex items-center gap-4 text-left">
-                <div className="w-10 h-10 rounded-full bg-[#00F0FF]/10 flex items-center justify-center"><Zap className="text-[#00F0FF]" size={18}/></div>
-                <div><h3 className="text-white font-bold text-sm">24-Hour Pass</h3><p className="text-gray-400 text-[10px]">Instant 1-day access</p></div>
+                <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center"><Zap size={18}/></div>
+                <div><h3 className="font-black text-sm">Instant 24-Hour Pass</h3><p className="text-black/70 text-[10px]">Unlocks this vault immediately</p></div>
               </div>
-              <div className="flex flex-col text-right"><span className="text-[#00F0FF] font-black">KES {activeVault?.price || 50}</span></div>
+              <div className="text-right"><span className="font-black text-lg">KES {activeVault?.price || 50}</span></div>
             </button>
           </div>
         </>
@@ -265,40 +249,287 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   );
 };
 
-// --- Layout 3: Profile & Settings ---
-const ProfileLayout = ({ setActiveTab }) => {
+// --- Creator Profile Layout ---
+const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId }) => {
+  if (!selectedCreator) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center text-gray-400">
+        <p>No creator selected.</p>
+        <button onClick={() => setActiveTab('home')} className="mt-4 text-[#00F0FF] font-bold text-xs">Return to Feed</button>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 py-6 space-y-6 pb-24 animate-in fade-in">
-      <div className="flex items-center gap-4 pb-6 border-b border-gray-800">
-        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center border-2 border-gray-700">
-          <User size={32} className="text-gray-400" />
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
+      <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
+        <img src={selectedCreator.img} alt={selectedCreator.title} className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
+        
+        <div className="relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#00F0FF]/50 shrink-0 shadow-[0_0_25px_rgba(0,240,255,0.3)]">
+          <img src={selectedCreator.img} alt={selectedCreator.title} className="w-full h-full object-cover" />
+        </div>
+
+        <div className="relative z-20 text-center md:text-left space-y-2 flex-1">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Verified Creator</span>
+            <span className="text-xs text-gray-400 font-mono">24 Media Uploads</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-white">{selectedCreator.title}</h1>
+          <p className="text-gray-300 text-xs max-w-lg leading-relaxed">Exclusive performer and content creator. Subscribe to unlock full archive streams, weekend drops, and private clips.</p>
+          
+          <div className="pt-2 flex justify-center md:justify-start gap-3">
+            <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-2.5 rounded-xl text-xs transition-all shadow-lg">
+              Unlock Vault (KES {selectedCreator.price || 50})
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 3. Membership / Account Benefits View ---
+const MembershipLayout = ({ setActiveTab }) => {
+  return (
+    <div className="max-w-xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">Membership</h1>
+        <p className="text-gray-400 text-xs max-w-md mx-auto">
+          A free account keeps your subscriptions safe and works on every device. Paying never needs one.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {[
+          { icon: <Smartphone className="text-[#00F0FF]" size={20}/>, title: "Your subscriptions on every device", desc: "Sign in on a phone, a tablet or a computer and keep watching. No codes to type." },
+          { icon: <Star className="text-[#FFD700]" size={20}/>, title: "Follow models and save favourites", desc: "Keep the creators and videos you like in one place." },
+          { icon: <History className="text-green-400" size={20}/>, title: "Watch history", desc: "Pick up where you left off." },
+          { icon: <Crown className="text-purple-400" size={20}/>, title: "Lifetime subscriptions", desc: "A lifetime subscription is kept on your account, so it is never lost with a device." }
+        ].map((item, idx) => (
+          <div key={idx} className="bg-[#12151c] border border-gray-800 rounded-xl p-4 flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-gray-800 shrink-0">
+              {item.icon}
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-xs">{item.title}</h3>
+              <p className="text-gray-400 text-[11px] mt-0.5 leading-relaxed">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3 pt-4">
+        <button onClick={() => setActiveTab('signup')} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+          Create a free account
+        </button>
+        <button onClick={() => setActiveTab('login')} className="w-full bg-[#12151c] hover:bg-gray-800 text-white font-bold py-4 rounded-xl text-xs border border-gray-800 transition-colors">
+          Log in
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- 4. Restore Access Page (M-Pesa Code Recovery) ---
+const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
+  const [phone, setPhone] = useState('');
+  const [mpesaCode, setMpesaCode] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRestore = (e) => {
+    e.preventDefault();
+    if (!phone || !mpesaCode) {
+      setToastMsg("Please provide both your phone number and payment code.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setToastMsg("Access code verified! Restoring VIP session...");
+      setTimeout(() => {
+        setToastMsg('');
+        setActiveTab('vip');
+      }, 2000);
+    }, 1500);
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">Restore access</h1>
+        <p className="text-gray-400 text-xs">Enter your M-Pesa transaction receipt code to recover your active session.</p>
+      </div>
+
+      <form onSubmit={handleRestore} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone number you paid with</label>
+          <input 
+            type="text" 
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="0712 345 678" 
+            className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Payment code</label>
+          <input 
+            type="text" 
+            value={mpesaCode}
+            onChange={(e) => setMpesaCode(e.target.value.toUpperCase())}
+            placeholder="E.G. SJK3ABC12D" 
+            className="w-full bg-black text-white font-mono uppercase text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+          {loading ? "VERIFYING RECEIPT..." : "Restore access"}
+        </button>
+      </form>
+
+      <div className="text-center">
+        <button onClick={() => setActiveTab('membership')} className="text-xs text-gray-400 hover:text-white">
+          Back to <span className="text-[#00F0FF] font-bold">Membership</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Auth Layout with Age Verification Checkbox ---
+const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [isAdult, setIsAdult] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!isLoginMode && !isAdult) {
+      setToastMsg("You must confirm you are 18 or older to register.");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setToastMsg(isLoginMode ? "Login successful!" : "Account created successfully!");
+      setTimeout(() => {
+        setToastMsg('');
+        setActiveTab('home');
+      }, 1500);
+    }, 1200);
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-black text-white">{isLoginMode ? 'Welcome back' : 'Create an account'}</h1>
+        <p className="text-gray-400 text-xs">Secure your creator subscriptions across all your devices.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone or Email</label>
+          <input 
+            type="text" 
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="0712 345 678 or email@domain.com" 
+            className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
+          <input 
+            type="password" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••" 
+            className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+          />
+        </div>
+
+        {!isLoginMode && (
+          <div className="flex items-start gap-3 pt-2">
+            <input 
+              type="checkbox" 
+              id="ageCheck" 
+              checked={isAdult}
+              onChange={(e) => setIsAdult(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+            />
+            <label htmlFor="ageCheck" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
+              I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
+            </label>
+          </div>
+        )}
+
+        <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+          {loading ? "PROCESSING..." : (isLoginMode ? 'Log in' : 'Create account')}
+        </button>
+      </form>
+
+      <div className="text-center">
+        <button onClick={() => setActiveTab(isLoginMode ? 'signup' : 'login')} className="text-xs text-gray-400 hover:text-white">
+          {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+          <span className="text-[#00F0FF] font-bold">{isLoginMode ? 'Sign up' : 'Log in'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- 5. Professional Legal Footer & Age Disclaimer ---
+const Footer = ({ setActiveTab }) => {
+  return (
+    <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
+      <p className="text-[11px] leading-relaxed text-gray-400 max-w-2xl">
+        Thika Expressway brings you exclusive videos and photos from the creators you follow, with new content added all the time. Subscribe for full access, or create a free account to keep your access on every device.
+      </p>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Information</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Terms of Service</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Privacy Policy</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Cookies</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Age Disclaimer</button></li>
+          </ul>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">+254 712 *** 678</h2>
-          <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 border border-green-500/20">
-            <CheckCircle2 size={10} /> VIP ACTIVE
-          </span>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Support & Help</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('restore')} className="hover:text-[#00F0FF] transition-colors text-[#00F0FF] font-bold">Restore access</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Membership Perks</button></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Content removal</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Content and Takedown Policy</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Report a takedown</button></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Discover</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('home')} className="hover:text-[#00F0FF] transition-colors">Creators</button></li>
+            <li><button onClick={() => setActiveTab('trending')} className="hover:text-[#00F0FF] transition-colors">Trending</button></li>
+            <li><button onClick={() => setActiveTab('latest')} className="hover:text-[#00F0FF] transition-colors">Latest</button></li>
+          </ul>
         </div>
       </div>
-
-      <div className="bg-[#12151c] rounded-2xl p-5 border border-gray-800">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-300 flex items-center gap-2"><CreditCard size={16}/> Billing</h3>
-          <span className="text-[10px] text-gray-500">Renews Next Month</span>
-        </div>
-        <div className="bg-black/50 p-4 rounded-xl border border-gray-800/50 flex justify-between items-center">
-          <div>
-            <div className="text-white font-bold">Monthly VIP</div>
-            <div className="text-xs text-gray-500">KES 500 / month</div>
-          </div>
-          <button className="text-xs text-[#00F0FF] font-bold bg-[#00F0FF]/10 px-3 py-1.5 rounded-lg">Manage</button>
-        </div>
+      
+      <div className="pt-6 border-t border-gray-900/80 text-[10px] text-center text-gray-600">
+        © 2026 Thika Expressway VIP. All rights reserved.
       </div>
-
-      <button onClick={() => setActiveTab('login')} className="w-full flex items-center justify-center gap-2 text-red-400 font-bold py-4 bg-red-500/5 rounded-xl border border-red-500/10 hover:bg-red-500/10 transition-colors">
-        <LogOut size={18} /> Secure Logout
-      </button>
-    </div>
+    </footer>
   );
 };
 
@@ -307,20 +538,27 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [toastMsg, setToastMsg] = useState('');
   const [vaults, setVaults] = useState([]);
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('thika_customer_phone') || '');
+  const [searchQuery, setSearchQuery] = useState('');
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, price: 0, status: 'waiting' });
   
-  // New States for Dynamic Unlocking
-  const [selectedVaultId, setSelectedVaultId] = useState('QCVwrsVuEtlAQ3PMziVs'); // Default fallback ID
+  const [selectedVaultId, setSelectedVaultId] = useState('QCVwrsVuEtlAQ3PMziVs');
+  const [selectedCreator, setSelectedCreator] = useState(null);
   const [activeVault, setActiveVault] = useState(null);
 
-  // One-time fetch for the Home Feed
+  useEffect(() => {
+    if (customerPhone) {
+      localStorage.setItem('thika_customer_phone', customerPhone);
+    }
+  }, [customerPhone]);
+
   useEffect(() => {
     const fetchVaults = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "vaults"));
         const vaultData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setVaults(vaultData);
+        if (vaultData.length > 0) setSelectedCreator(vaultData[0]);
       } catch (error) {
         console.error("Error fetching vaults: ", error);
       }
@@ -328,29 +566,22 @@ export default function App() {
     fetchVaults();
   }, []);
 
-  // Real-time listener for the currently selected Vault
   useEffect(() => {
     if (!selectedVaultId) return;
     const vaultRef = doc(db, 'vaults', selectedVaultId);
-    
-    // onSnapshot automatically pushes updates to the app whenever the DB changes
     const unsubscribe = onSnapshot(vaultRef, (docSnap) => {
       if (docSnap.exists()) {
         setActiveVault({ id: docSnap.id, ...docSnap.data() });
       }
     });
-
-    // Cleanup listener on unmount
     return () => unsubscribe();
   }, [selectedVaultId]);
 
   const handlePayment = async (plan, price) => {
     let formattedPhone = customerPhone.trim();
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = '254' + formattedPhone.slice(1);
-    }
+    if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.slice(1);
     if (!formattedPhone || formattedPhone.length < 10) {
-      setToastMsg("Please enter a valid M-Pesa phone number in the VIP tab!");
+      setToastMsg("Please enter a valid M-Pesa phone number!");
       setTimeout(() => setToastMsg(''), 4000);
       setActiveTab('vip');
       return;
@@ -361,122 +592,12 @@ export default function App() {
     try {
       const response = await fetch("/.netlify/functions/stk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          amount: price,
-          msisdn: formattedPhone,
-          // PASSING THE DYNAMIC ID TO HASHPAY
-          reference: selectedVaultId 
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: price, msisdn: formattedPhone, reference: selectedVaultId })
       });
 
       const data = await response.json();
-      console.log("STK Response:", data);
-
       if (response.ok && (data.success || data.ResponseCode === "0" || data.ResponseCode === 0)) {
         setPaymentModal(prev => ({ ...prev, status: 'success' }));
         setTimeout(() => {
-          setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-          setToastMsg(`STK push sent for ${plan}! Check your phone.`);
-          setTimeout(() => setToastMsg(''), 4000);
-        }, 2500);
-      } else {
-        setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-        setToastMsg("Failed: " + (data.message || data.error || "Please try again."));
-        setTimeout(() => setToastMsg(''), 4000);
-      }
-    } catch (error) {
-      console.error("STK Push Error:", error);
-      setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
-      setToastMsg("Connection error connecting to payment gateway.");
-      setTimeout(() => setToastMsg(''), 4000);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black">
-      
-      {toastMsg && <Toast msg={toastMsg} />}
-
-      {/* M-Pesa Payment Modal */}
-      {paymentModal.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#12151c] border border-gray-800 rounded-2xl w-full max-w-sm p-6 flex flex-col items-center text-center shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-            {paymentModal.status === 'waiting' ? (
-              <>
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 border border-green-500/30">
-                  <Loader2 size={32} className="text-green-500 animate-spin" />
-                </div>
-                <h3 className="text-lg font-black text-white mb-2">Sending STK Push</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  Initiating payment prompt of <span className="text-white font-bold">KES {paymentModal.price}</span> to <span className="text-[#00F0FF] font-mono">{customerPhone}</span>.
-                </p>
-                <p className="text-xs text-gray-500 animate-pulse">Please check your phone for the PIN prompt...</p>
-              </>
-            ) : (
-              <>
-                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4 border border-green-500/50">
-                  <CheckCircle2 size={32} className="text-green-500" />
-                </div>
-                <h3 className="text-lg font-black text-white mb-2">STK Push Sent!</h3>
-                <p className="text-sm text-gray-400">Enter your M-Pesa PIN on your phone to complete.</p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0A0C10]/80 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full">
-        <div className="flex flex-col uppercase tracking-tighter font-black leading-none cursor-pointer" onClick={() => setActiveTab('home')}>
-          <span className="text-[#00F0FF] text-lg">Thika</span>
-          <span className="text-[#FFD700] text-xs tracking-[0.2em]">Premium</span>
-        </div>
-        <a href="https://t.me" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 bg-[#0088cc]/10 text-[#0088cc] border border-[#0088cc]/40 px-3 py-1.5 rounded-full text-[10px] font-bold shadow-[0_0_10px_rgba(0,136,204,0.2)]">
-          <Send size={12} /> Telegram
-        </a>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="max-w-md mx-auto w-full">
-        {activeTab === 'home' && <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} />}
-        {activeTab === 'explore' && <ExploreLayout setActiveTab={setActiveTab} />}
-        {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} />}
-        {activeTab === 'profile' && <ProfileLayout setActiveTab={setActiveTab} />}
-        {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} />}
-      </main>
-
-      {/* Sticky Bottom Navigation */}
-      <nav className="fixed bottom-0 w-full z-50 bg-[#0A0C10]/95 backdrop-blur-lg border-t border-gray-800/80 supports-[padding:max(0px)]:pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-md mx-auto px-6 h-16 flex justify-between items-center">
-          
-          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 w-14 transition-colors ${activeTab === 'home' ? 'text-white' : 'text-gray-600'}`}>
-            <Home size={22} className={activeTab === 'home' ? 'stroke-2' : 'stroke-[1.5]'} />
-            <span className="text-[9px] font-bold tracking-wide">Home</span>
-          </button>
-
-          <button onClick={() => setActiveTab('explore')} className={`flex flex-col items-center gap-1 w-14 transition-colors ${activeTab === 'explore' ? 'text-white' : 'text-gray-600'}`}>
-            <Compass size={22} className={activeTab === 'explore' ? 'stroke-2' : 'stroke-[1.5]'} />
-            <span className="text-[9px] font-bold tracking-wide">Explore</span>
-          </button>
-
-          <button onClick={() => setActiveTab('vip')} className={`flex flex-col items-center gap-1 w-14 transition-colors ${activeTab === 'vip' ? 'text-[#00F0FF]' : 'text-gray-600'}`}>
-            <div className="relative">
-              <Crown size={22} className={activeTab === 'vip' ? 'stroke-2 text-[#00F0FF]' : 'stroke-[1.5]'} />
-              {activeTab === 'vip' && <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#FFD700] rounded-full animate-pulse shadow-[0_0_5px_#FFD700]"></div>}
-            </div>
-            <span className="text-[9px] font-bold tracking-wide">VIP</span>
-          </button>
-
-          <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center gap-1 w-14 transition-colors ${activeTab === 'profile' ? 'text-white' : 'text-gray-600'}`}>
-            <User size={22} className={activeTab === 'profile' ? 'stroke-2' : 'stroke-[1.5]'} />
-            <span className="text-[9px] font-bold tracking-wide">Account</span>
-          </button>
-
-        </div>
-      </nav>
-    </div>
-  );
-}
+          setPaymentModal({ isOpen
