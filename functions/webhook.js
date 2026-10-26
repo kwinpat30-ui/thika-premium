@@ -38,10 +38,11 @@ export default async (req, context) => {
     const payload = JSON.parse(rawBody);
     console.log("Verified HashPay Webhook Received:", JSON.stringify(payload, null, 2));
 
-    // TODO: Connect to your database here to unlock the user's VIP access if payment is successful
+    // 6. Connect to your database here to unlock the user's VIP access if payment is successful
     if (payload.event === 'payment.success') {
-      console.log(`Payment successful for reference: ${payload.data.reference}`);
-      // e.g., await updateDatabaseToVIP(payload.data.msisdn);
+      console.log(`Payment successful for reference: ${payload.TransactionReference}`);
+      console.log(`Unlock VIP access for phone number: ${payload.Msisdn}`);
+      // TODO: Add your database update logic here (e.g., await grantVipAccess(payload.Msisdn); )
     }
 
     return new Response(JSON.stringify({ status: "success", message: "Webhook processed" }), {
