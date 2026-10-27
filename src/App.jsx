@@ -6,7 +6,8 @@ import {
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
   Search, Filter, Phone, History, PlusCircle, Trash2, LayoutDashboard,
-  Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, Image as ImageIcon, Film, Maximize2, Bitcoin
+  Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, 
+  Image as ImageIcon, Film, Maximize2, Bitcoin, Bookmark, Bell, Monitor, Settings, PlayCircle
 } from 'lucide-react';
 
 const OWNER_EMAIL = "kwinpat30@gmail.com"; 
@@ -60,7 +61,10 @@ const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout
               <button onClick={() => handleNav('login')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><LogOut size={20} className="text-gray-500"/> Log in</button>
             </>
           ) : (
-            <button onClick={() => { handleLogout(); setIsOpen(false); }} className="flex items-center gap-3 hover:text-red-400 transition-colors"><LogOut size={20} className="text-gray-500"/> Log out</button>
+            <>
+              <button onClick={() => handleNav('account')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors text-[#00F0FF]"><User size={20}/> My Account</button>
+              <button onClick={() => { handleLogout(); setIsOpen(false); }} className="flex items-center gap-3 hover:text-red-400 transition-colors"><LogOut size={20} className="text-gray-500"/> Log out</button>
+            </>
           )}
           
           <button onClick={() => handleNav('restore')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><History size={20} className="text-gray-500"/> Restore access</button>
@@ -74,8 +78,8 @@ const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout
   );
 };
 
-// --- Mobile Bottom Navigation Bar (NEW) ---
-const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen }) => {
+// --- Mobile Bottom Navigation Bar ---
+const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen, currentUser }) => {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-t border-gray-800 pb-2">
       <div className="flex justify-around items-center h-16">
@@ -91,7 +95,7 @@ const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen }) => {
           <Crown size={22} className={activeTab === 'membership' ? 'text-[#FFD700]' : ''} />
           <span className="text-[9px] font-bold uppercase tracking-widest">Subscribe</span>
         </button>
-        <button onClick={() => setIsMobileMenuOpen(true)} className="flex flex-col items-center gap-1 w-1/4 text-gray-500 hover:text-gray-300">
+        <button onClick={() => currentUser ? setActiveTab('account') : setIsMobileMenuOpen(true)} className={`flex flex-col items-center gap-1 w-1/4 ${activeTab === 'account' ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-300'}`}>
           <User size={22} />
           <span className="text-[9px] font-bold uppercase tracking-widest">Account</span>
         </button>
@@ -105,8 +109,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        
-        {/* Hamburger + Logo */}
         <div className="flex items-center gap-3">
           <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-300 hover:text-white p-1">
             <Menu size={24} />
@@ -116,39 +118,25 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 
         <div className="hidden md:flex relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search videos, creators, tags..." 
-            className="w-full bg-[#12151c] text-white text-xs border border-gray-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors"
-          />
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos, creators, tags..." className="w-full bg-[#12151c] text-white text-xs border border-gray-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors" />
         </div>
 
         <div className="flex items-center gap-3">
           {currentUser ? (
             <div className="hidden md:flex items-center gap-2">
               {isOwner && (
-                <button 
-                  onClick={() => setActiveTab('admin')} 
-                  className={`text-xs font-bold px-3 py-2 rounded-full border transition-all flex items-center gap-1 ${activeTab === 'admin' ? 'bg-[#00F0FF] text-black border-[#00F0FF]' : 'bg-gray-900 text-[#00F0FF] border-gray-800 hover:border-[#00F0FF]'}`}
-                >
+                <button onClick={() => setActiveTab('admin')} className={`text-xs font-bold px-3 py-2 rounded-full border transition-all flex items-center gap-1 ${activeTab === 'admin' ? 'bg-[#00F0FF] text-black border-[#00F0FF]' : 'bg-gray-900 text-[#00F0FF] border-gray-800 hover:border-[#00F0FF]'}`}>
                   <LayoutDashboard size={14}/> Admin
                 </button>
               )}
-              <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-white flex items-center gap-1 bg-gray-900 border border-gray-800 px-3 py-2 rounded-full">
-                <LogOut size={14}/> Logout
+              <button onClick={() => setActiveTab('account')} className={`text-xs font-bold px-3 py-2 rounded-full border transition-all flex items-center gap-1 ${activeTab === 'account' ? 'bg-[#00F0FF] text-black border-[#00F0FF]' : 'bg-gray-900 text-white border-gray-800 hover:border-gray-600'}`}>
+                <User size={14}/> Account
               </button>
             </div>
           ) : (
-            <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">
-              Log in
-            </button>
+            <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">Log in</button>
           )}
-          <button 
-            onClick={() => setActiveTab('vip')} 
-            className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5"
-          >
+          <button onClick={() => setActiveTab('vip')} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5">
             <Crown size={14} /> Subscribe
           </button>
         </div>
@@ -162,11 +150,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           { id: 'latest', label: 'Latest' },
           { id: 'popular', label: 'Most Popular' }
         ].map((tab) => (
-          <button 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${activeTab === tab.id ? 'text-[#00F0FF] border-[#00F0FF]' : 'text-gray-400 border-transparent hover:text-white'}`}
-          >
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${activeTab === tab.id ? 'text-[#00F0FF] border-[#00F0FF]' : 'text-gray-400 border-transparent hover:text-white'}`}>
             {tab.label}
           </button>
         ))}
@@ -174,6 +158,190 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
     </header>
   );
 };
+
+// --- User Account Dashboard (NEW) ---
+const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLogout, setActiveTab, setToastMsg }) => {
+  const [subTab, setSubTab] = useState('subscriptions');
+  const [bookmarks, setBookmarks] = useState(() => JSON.parse(localStorage.getItem('thika_bookmarks') || '[]'));
+  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('thika_history') || '[]'));
+
+  if (!currentUser) {
+    setActiveTab('login');
+    return null;
+  }
+
+  const handleUpdatePhone = () => {
+    localStorage.setItem('thika_customer_phone', customerPhone);
+    setToastMsg("M-Pesa phone number updated!");
+    setTimeout(() => setToastMsg(''), 2500);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in flex flex-col md:flex-row gap-8">
+      
+      {/* Sidebar Navigation (Desktop) / Top Scroll (Mobile) */}
+      <div className="w-full md:w-64 shrink-0 space-y-2 flex md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 border-gray-800">
+        <div className="hidden md:block mb-6 px-4">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#00F0FF] to-blue-600 flex items-center justify-center text-xl font-black text-white mb-3">
+            {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : <User />}
+          </div>
+          <h2 className="text-white font-bold truncate">{currentUser.email || currentUser.phoneNumber || 'User'}</h2>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Premium Member</p>
+        </div>
+
+        {[
+          { id: 'subscriptions', icon: <Crown size={16}/>, label: 'My Vaults' },
+          { id: 'following', icon: <Heart size={16}/>, label: 'Following' },
+          { id: 'bookmarks', icon: <Bookmark size={16}/>, label: 'Bookmarks' },
+          { id: 'history', icon: <PlayCircle size={16}/>, label: 'History' },
+          { id: 'billing', icon: <CreditCard size={16}/>, label: 'Billing & Tiers' },
+          { id: 'settings', icon: <Settings size={16}/>, label: 'Settings & Security' },
+        ].map(item => (
+          <button 
+            key={item.id} 
+            onClick={() => setSubTab(item.id)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl whitespace-nowrap transition-all text-sm font-bold w-full ${subTab === item.id ? 'bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20' : 'text-gray-400 hover:text-white hover:bg-gray-900 border border-transparent'}`}
+          >
+            {item.icon} {item.label}
+          </button>
+        ))}
+        
+        <div className="hidden md:block pt-8 px-4">
+          <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">
+            <LogOut size={14}/> Sign Out Securely
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0">
+        
+        {subTab === 'subscriptions' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-white flex items-center gap-2"><Crown className="text-[#FFD700]"/> Unlocked Vaults</h3>
+            <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">Content you have full or sneak-peek access to.</p>
+            
+            <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center space-y-3">
+              <Compass size={32} className="text-gray-600 mx-auto" />
+              <p className="text-sm font-bold text-gray-300">No active subscriptions yet</p>
+              <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] hover:underline font-bold">Explore Premium Vaults</button>
+            </div>
+          </div>
+        )}
+
+        {subTab === 'bookmarks' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-white flex items-center gap-2"><Bookmark className="text-[#00F0FF]"/> Saved Media</h3>
+            <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">Your personal curated gallery of favorite photos and videos.</p>
+            
+            {bookmarks.length === 0 ? (
+              <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center space-y-3">
+                <Bookmark size={32} className="text-gray-600 mx-auto" />
+                <p className="text-sm font-bold text-gray-300">No bookmarks saved</p>
+                <p className="text-xs text-gray-500">Click the bookmark icon in the media player to save items here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {bookmarks.map((item, idx) => (
+                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden bg-black border border-gray-800 group">
+                    <img src={item.thumb} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1 border border-gray-800">
+                      {item.type === 'video' ? <Film size={12}/> : <ImageIcon size={12}/>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {subTab === 'history' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-white flex items-center gap-2"><PlayCircle className="text-green-400"/> Continue Watching</h3>
+            <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">Jump right back into your recently viewed streams.</p>
+            <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center">
+              <p className="text-sm font-bold text-gray-300">Your history is currently clear.</p>
+            </div>
+          </div>
+        )}
+
+        {subTab === 'following' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-black text-white flex items-center gap-2"><Heart className="text-red-400"/> Followed Creators</h3>
+            <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center">
+              <p className="text-sm font-bold text-gray-300">You are not following any creators yet.</p>
+            </div>
+          </div>
+        )}
+
+        {subTab === 'billing' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-black text-white flex items-center gap-2"><CreditCard className="text-gray-300"/> Billing Ledger</h3>
+              <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">A record of your M-Pesa transactions and receipt codes.</p>
+            </div>
+            
+            <div className="overflow-x-auto bg-[#12151c] border border-gray-800 rounded-xl">
+              <table className="w-full text-left text-xs text-gray-300">
+                <thead className="bg-gray-900 border-b border-gray-800 text-gray-500 uppercase text-[10px]">
+                  <tr><th className="p-4">Date</th><th className="p-4">Vault / Tier</th><th className="p-4">Receipt Code</th><th className="p-4 text-right">Amount</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td colSpan="4" className="p-6 text-center text-gray-500 italic">No transactions found.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {subTab === 'settings' && (
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <h3 className="text-lg font-black text-white flex items-center gap-2"><Settings className="text-gray-300"/> Account Configuration</h3>
+              
+              <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">Default M-Pesa Number</label>
+                <p className="text-[10px] text-gray-500 mb-2">Used for faster checkouts and receipt recovery.</p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone size={16} className="text-[#00F0FF]" /></div>
+                    <input type="text" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="0712345678" className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-2.5 pl-10 pr-3 text-sm focus:border-[#00F0FF] focus:outline-none" />
+                  </div>
+                  <button onClick={handleUpdatePhone} className="bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors">Save</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-black text-white flex items-center gap-2"><Monitor className="text-gray-300"/> Active Devices</h3>
+              <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">Manage devices currently logged into your account to prevent unauthorized sharing.</p>
+              
+              <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-4 divide-y divide-gray-800/60">
+                <div className="flex justify-between items-center py-3">
+                  <div className="flex items-center gap-3">
+                    <Smartphone size={20} className="text-[#00F0FF]" />
+                    <div>
+                      <p className="text-sm text-white font-bold">Current Device</p>
+                      <p className="text-[10px] text-green-400 uppercase tracking-wider">Active Now</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:hidden pt-4 pb-12 border-t border-gray-800">
+              <button onClick={handleLogout} className="w-full flex justify-center items-center gap-2 bg-gray-900 border border-gray-800 text-sm font-bold text-red-400 hover:bg-gray-800 py-4 rounded-xl transition-colors">
+                <LogOut size={16}/> Sign Out Securely
+              </button>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 
 // --- Admin Dashboard (Tiered Pricing Setup) ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
@@ -514,11 +682,11 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
 };
 
 // --- VIP Layout with "Locked Teaser", 2-Step Checkout, and Mixed Media Grid ---
-const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab }) => {
+const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab, setToastMsg }) => {
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [activeModalItem, setActiveModalItem] = useState(null); 
-  const [checkoutStep, setCheckoutStep] = useState(0); // 0=Hidden, 1=PayMethod, 2=Tiers
+  const [checkoutStep, setCheckoutStep] = useState(0); 
   const [selectedTierPrice, setSelectedTierPrice] = useState(0);
   
   const isUnlocked = activeVault?.status === 'unlocked';
@@ -532,6 +700,18 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
     const clockInterval = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
     return () => { clearInterval(moveInterval); clearInterval(clockInterval); };
   }, []);
+
+  const saveBookmark = (item) => {
+    const existing = JSON.parse(localStorage.getItem('thika_bookmarks') || '[]');
+    if (!existing.some(b => b.urlOrId === item.urlOrId)) {
+      const updated = [...existing, item];
+      localStorage.setItem('thika_bookmarks', JSON.stringify(updated));
+      setToastMsg("Saved to Bookmarks!");
+    } else {
+      setToastMsg("Already in Bookmarks.");
+    }
+    setTimeout(() => setToastMsg(''), 2000);
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
@@ -590,12 +770,14 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
           {/* ZOOM MODAL LIGHTBOX */}
           {activeModalItem && (
             <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in">
-              <button 
-                onClick={() => setActiveModalItem(null)} 
-                className="absolute top-6 right-6 bg-gray-900 border border-gray-700 text-white p-3 rounded-full hover:bg-red-600 transition-colors shadow-lg z-30"
-              >
-                <X size={20} />
-              </button>
+              <div className="absolute top-6 right-6 flex items-center gap-3 z-30">
+                <button onClick={() => saveBookmark(activeModalItem)} className="bg-gray-900 border border-gray-700 text-white p-3 rounded-full hover:bg-gray-800 transition-colors shadow-lg">
+                  <Bookmark size={20} />
+                </button>
+                <button onClick={() => setActiveModalItem(null)} className="bg-gray-900 border border-gray-700 text-white p-3 rounded-full hover:bg-red-600 transition-colors shadow-lg">
+                  <X size={20} />
+                </button>
+              </div>
 
               <div className="w-full max-w-3xl aspect-video bg-black rounded-2xl overflow-hidden border border-gray-800 relative shadow-[0_0_50px_rgba(0,240,255,0.2)]">
                 {activeModalItem.type === 'video' ? (
@@ -664,7 +846,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                   <div className="space-y-3">
                     <p className="text-xs text-gray-400 text-center mb-4 uppercase tracking-widest font-bold">Select Payment Method</p>
                     
-                    {/* Active M-Pesa Button */}
                     <button onClick={()=>setCheckoutStep(2)} className="w-full flex justify-between items-center p-3.5 rounded-xl border border-gray-700 bg-black hover:border-[#00F0FF] hover:bg-gray-900 transition-all shadow-md">
                       <div className="flex items-center gap-3">
                         <div className="bg-green-500 text-white text-[10px] font-black px-1.5 py-1 rounded">M-PESA</div>
@@ -673,7 +854,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                       <span className="text-xs text-[#FFD700] font-bold">KES <span className="ml-1 text-gray-400">{'>'}</span></span>
                     </button>
                     
-                    {/* Greyed out options for Global Trust */}
                     <div className="w-full flex justify-between items-center p-3.5 rounded-xl border border-gray-800 bg-black/40 opacity-40 cursor-not-allowed">
                       <div className="flex items-center gap-3"><Shield size={18} className="text-blue-400"/><span className="text-sm font-bold text-white">Remitly</span></div>
                       <span className="text-xs text-gray-400 font-bold">USD {'>'}</span>
@@ -1345,7 +1525,10 @@ export default function App() {
   const handleLogout = async () => {
     await signOut(auth);
     setToastMsg("Logged out successfully");
-    setTimeout(() => setToastMsg(''), 2500);
+    setTimeout(() => {
+      setToastMsg('');
+      setActiveTab('home');
+    }, 2000);
   };
 
   useEffect(() => {
@@ -1435,8 +1618,9 @@ export default function App() {
           {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
             <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
           )}
+          {activeTab === 'account' && <AccountLayout currentUser={currentUser} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handleLogout={handleLogout} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
-          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} />}
+          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
           {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
@@ -1447,7 +1631,7 @@ export default function App() {
       </div>
 
       <Footer setActiveTab={setActiveTab} />
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsMobileMenuOpen={setIsMobileMenuOpen} currentUser={currentUser} />
     </div>
   );
 }
