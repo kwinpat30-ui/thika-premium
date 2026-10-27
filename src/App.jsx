@@ -469,7 +469,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 
   const handleCreateVault = async (e) => {
     e.preventDefault();
-    if (!creatorName || !sellTitle || !sellImgUrl || selMediaList.length === 0) {
+    if (!creatorName || !title || !imgUrl || mediaList.length === 0) {
       setToastMsg("Provide a creator name, vault title, cover image, and media.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
@@ -478,25 +478,25 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     try {
       const docRef = await addDoc(collection(db, "vaults"), {
         creatorName: creatorName.trim(),
-        title: sellTitle.trim(),
+        title: title.trim(),
         isFeatured: isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
-        mediaCount: `${selMediaList.length} items`,
-        img: sellImgUrl.trim(),
-        medialist: selMediaList,
+        mediaCount: `${mediaList.length} items`,
+        img: imgUrl.trim(),
+        medialist: mediaList,
         status: 'locked',
         createdAt: new Date()
       });
       setVaults(prev => [...prev, {
-        id: docRef.id, creatorName, title: sellTitle, isFeatured,
+        id: docRef.id, creatorName, title: title, isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
-        mediaCount: `${selMediaList.length} items`, img: sellImgUrl, medialist: selMediaList, status: 'locked'
+        mediaCount: `${mediaList.length} items`, img: imgUrl, medialist: mediaList, status: 'locked'
       }]);
       setCreatorName('');
-      setSellTitle('');
+      setTitle('');
       setIsFeatured(false);
-      setSellImgUrl('');
-      setSelMediaList([]);
+      setImgUrl('');
+      setMediaList([]);
       setToastMsg("New immersive vault published successfully!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
@@ -505,7 +505,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     } finally {
       setLoading(false);
     }
-  };
   };
 
   const handleDeleteVault = async (id) => {
@@ -659,7 +658,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       </div>
     </div>
   );
-
+}; // <--- ADDED MISSING CLOSING BRACE
 
 // --- Home Layout / Tab Sorting Logic with Dynamic Featured Hero ---
 const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
