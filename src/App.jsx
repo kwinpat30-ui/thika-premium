@@ -387,7 +387,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [loading, setLoading] = useState(false);
   
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const CLOUDINARY_CLOUD_NAME = "dfw62f3ry"; 
+  const CLOUDINARY_CLOUD_NAME = "caqvcdhb";
   const CLOUDINARY_UPLOAD_PRESET = "thika_preset"; 
 
   const [isUploading, setIsUploading] = useState(false);
