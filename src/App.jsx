@@ -6,7 +6,7 @@ import {
   Send, Home, Compass, Crown, User, Smartphone, Play, Lock, 
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
   Search, Filter, Phone, History, PlusCircle, Trash2, LayoutDashboard,
-  Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, Image as ImageIcon, Film, Maximize2
+  Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, Image as ImageIcon, Film, Maximize2, Bitcoin
 } from 'lucide-react';
 
 const OWNER_EMAIL = "kwinpat30@gmail.com"; 
@@ -24,7 +24,7 @@ const Logo = () => (
     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FFD700] via-[#12151c] to-[#00F0FF] p-[1px] shadow-[0_0_15px_rgba(0,240,255,0.3)]">
       <div className="w-full h-full bg-[#0A0C10] rounded-xl flex items-center justify-center overflow-hidden relative">
         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#FFD700] group-hover:scale-110 transition-transform duration-300" fill="currentColor">
-          <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l5.4 3.4L12 11 6.6 7.6 12 4.2zM6 9.4l5 3.1v6.1l-5-3.1V9.4zm12 0v6.1l-5 3.1v-6.1l5-3.1z" />
+          <path d="M12 2a2.5 2.5 0 00-2.5 2.5c0 1.15.77 2.12 1.83 2.42v.58c-2.8.6-4.33 3.1-4.33 6 0 2.2 1.2 4.6 2.5 6.5V22h5v-2c1.3-1.9 2.5-4.3 2.5-6.5 0-2.9-1.53-5.4-4.33-6v-.58c1.06-.3 1.83-1.27 1.83-2.42A2.5 2.5 0 0012 2z" />
         </svg>
       </div>
     </div>
@@ -90,8 +90,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           { id: 'creators', label: 'Creators' },
           { id: 'trending', label: 'Trending' },
           { id: 'latest', label: 'Latest' },
-          { id: 'popular', label: 'Most Popular' },
-          { id: 'toprated', label: 'Top Rated' }
+          { id: 'popular', label: 'Most Popular' }
         ].map((tab) => (
           <button 
             key={tab.id}
@@ -106,11 +105,12 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
-// --- Admin Dashboard Layout ---
+// --- Admin Dashboard (Tiered Pricing Setup) ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('50');
-  const [mediaCount, setMediaCount] = useState('15 media');
+  const [sneakPeekPrice, setSneakPeekPrice] = useState('50');
+  const [lifetimePrice, setLifetimePrice] = useState('150');
+  const [globalPrice, setGlobalPrice] = useState('1500');
   const [imgUrl, setImgUrl] = useState('');
   const [mediaList, setMediaList] = useState([]); 
   const [loading, setLoading] = useState(false);
@@ -209,7 +209,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const handleCreateVault = async (e) => {
     e.preventDefault();
     if (!title || !imgUrl || mediaList.length === 0) {
-      setToastMsg("Please provide a title, cover image, and at least one media item.");
+      setToastMsg("Provide a title, cover image, and at least one media item.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
@@ -218,7 +218,11 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     try {
       const docRef = await addDoc(collection(db, "vaults"), {
         title: title.trim(),
-        price: Number(price),
+        pricing: {
+          sneakPeek: Number(sneakPeekPrice),
+          lifetime: Number(lifetimePrice),
+          global: Number(globalPrice)
+        },
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
         mediaList: mediaList, 
@@ -226,10 +230,12 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         createdAt: new Date()
       });
 
-      setVaults(prev => [...prev, { id: docRef.id, title, price: Number(price), mediaCount: `${mediaList.length} items`, img: imgUrl, mediaList, status: 'locked' }]);
-      setTitle('');
-      setImgUrl('');
-      setMediaList([]);
+      setVaults(prev => [...prev, { 
+        id: docRef.id, title, 
+        pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) }, 
+        mediaCount: `${mediaList.length} items`, img: imgUrl, mediaList, status: 'locked' 
+      }]);
+      setTitle(''); setImgUrl(''); setMediaList([]);
       setToastMsg("New immersive vault published successfully!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
@@ -260,7 +266,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             <LayoutDashboard className="text-[#00F0FF]" /> Admin Control Center
           </h1>
-          <p className="text-gray-400 text-xs mt-1">Publish immersive vaults with mixed videos and photo galleries.</p>
+          <p className="text-gray-400 text-xs mt-1">Publish vaults with tiered pricing & mixed media.</p>
         </div>
         <button onClick={() => setActiveTab('home')} className="text-xs bg-gray-900 border border-gray-800 hover:text-white px-4 py-2 rounded-xl text-gray-300 font-bold">
           View Live Site →
@@ -270,7 +276,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <PlusCircle size={16} className="text-[#FFD700]" /> Publish Immersive Content Vault
+            <PlusCircle size={16} className="text-[#FFD700]" /> Publish Immersive Vault
           </h3>
 
           <form onSubmit={handleCreateVault} className="space-y-4">
@@ -285,24 +291,18 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Price (KES)</label>
-                <input 
-                  type="number" 
-                  value={price} 
-                  onChange={(e) => setPrice(e.target.value)} 
-                  className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
-                />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Sneak Peek (KES)</label>
+                <input type="number" value={sneakPeekPrice} onChange={(e) => setSneakPeekPrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Media Count</label>
-                <input 
-                  type="text" 
-                  value={`${mediaList.length} items loaded`} 
-                  disabled
-                  className="w-full bg-black/50 text-gray-400 font-mono text-xs border border-gray-800 rounded-xl py-2.5 px-4"
-                />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Lifetime (KES)</label>
+                <input type="number" value={lifetimePrice} onChange={(e) => setLifetimePrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Global Pass (KES)</label>
+                <input type="number" value={globalPrice} onChange={(e) => setGlobalPrice(e.target.value)} className="w-full bg-black text-[#00F0FF] font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#00F0FF]"/>
               </div>
             </div>
 
@@ -348,10 +348,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
                 <span className="text-2xl font-black text-[#00F0FF]">{vaults.length}</span>
                 <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Active Vaults</p>
               </div>
-              <div className="bg-black/50 border border-gray-800/80 p-4 rounded-xl text-center">
-                <span className="text-2xl font-black text-[#FFD700]">KES {vaults.reduce((acc, v) => acc + Number(v.price || 50), 0)}</span>
-                <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Catalog Value</p>
-              </div>
             </div>
           </div>
         </div>
@@ -366,7 +362,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
                 <th className="pb-3">Thumbnail</th>
                 <th className="pb-3">Title</th>
                 <th className="pb-3">Items</th>
-                <th className="pb-3">Price</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -376,7 +371,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
                   <td className="py-3"><img src={vault.img} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" /></td>
                   <td className="py-3 font-bold text-white">{vault.title}</td>
                   <td className="py-3 text-gray-400 font-mono">{vault.mediaList?.length || 1} items</td>
-                  <td className="py-3 text-[#FFD700] font-mono">KES {vault.price || 50}</td>
                   <td className="py-3 text-right space-x-2">
                     <button onClick={() => { setSelectedVaultId(vault.id); setActiveTab('vip'); }} className="text-[#00F0FF] hover:underline px-2 py-1 font-bold">View</button>
                     <button onClick={() => handleDeleteVault(vault.id)} className="text-red-400 hover:text-red-300 p-1 rounded"><Trash2 size={16}/></button>
@@ -401,6 +395,7 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
         <div className="absolute bottom-6 left-6 z-20 space-y-2">
           <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
           <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Superhighway Premium Experience</h2>
+          <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
         </div>
       </div>
 
@@ -412,48 +407,53 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {vaults.map((vault) => (
-            <div 
-              key={vault.id} 
-              onClick={() => { setSelectedVaultId(vault.id); setSelectedCreator(vault); setActiveTab('vip'); }} 
-              className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-[#00F0FF]/50 transition-all shadow-lg"
-            >
-              <img src={vault.img} alt={vault.title} className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-110 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-              
-              <div className="absolute top-3 right-3">
-                <span className="bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-gray-300 border border-gray-700">
-                  {vault.mediaList?.length || 1} items
-                </span>
-              </div>
+          {vaults.map((vault) => {
+            const pricing = vault.pricing || { sneakPeek: vault.price || 50, lifetime: 150, global: 1500 };
+            return (
+              <div 
+                key={vault.id} 
+                onClick={() => { setSelectedVaultId(vault.id); setSelectedCreator(vault); setActiveTab('vip'); }} 
+                className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-[#00F0FF]/50 transition-all shadow-lg"
+              >
+                <img src={vault.img} alt={vault.title} className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                
+                <div className="absolute top-3 right-3">
+                  <span className="bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-gray-300 border border-gray-700">
+                    {vault.mediaList?.length || 1} items
+                  </span>
+                </div>
 
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-gray-500/50">
-                  <Lock size={18} className="text-[#FFD700]" />
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-gray-500/50">
+                    <Lock size={18} className="text-[#FFD700]" />
+                  </div>
+                </div>
+
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title}</h4>
+                  <div className="text-[10px] text-[#FFD700] font-mono mt-0.5">From KES {pricing.sneakPeek}</div>
                 </div>
               </div>
-
-              <div className="absolute bottom-3 left-3 right-3">
-                <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title}</h4>
-                <div className="text-[10px] text-[#FFD700] font-mono mt-0.5">KES {vault.price || 50} access</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
 
-// --- VIP Layout with Interactive Grid & Zoom Modal ---
-const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment }) => {
+// --- VIP Layout with "Locked Teaser", 2-Step Checkout, and Mixed Media Grid ---
+const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab }) => {
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
-  const [timeLeft, setTimeLeft] = useState("02:45:30");
   const [activeModalItem, setActiveModalItem] = useState(null); 
+  const [checkoutStep, setCheckoutStep] = useState(0); // 0=Hidden, 1=PayMethod, 2=Tiers
+  const [selectedTierPrice, setSelectedTierPrice] = useState(0);
   
   const isUnlocked = activeVault?.status === 'unlocked';
   const mediaList = activeVault?.mediaList || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
+  const pricing = activeVault?.pricing || { sneakPeek: activeVault?.price || 50, lifetime: 150, global: 1500 };
 
   useEffect(() => {
     const moveInterval = setInterval(() => {
@@ -464,17 +464,39 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 animate-in fade-in">
-      <div className="border-b border-gray-800/80 pb-4">
-        <h1 className="text-2xl font-black text-white tracking-tight">{activeVault?.title || 'Immersive Lounge'}</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          {isUnlocked ? 'Access unlocked. Tap any media item to view in full screen.' : 'Unlock this full gallery & video archive instantly.'}
-        </p>
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
+      
+      {/* 🌟 LUXURY VAULT HEADER */}
+      <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_30px_rgba(0,240,255,0.1)]">
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
+        <img src={activeVault?.img || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop"} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
+        
+        <div className="relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-2xl overflow-hidden border-2 border-[#00F0FF]/50 shrink-0 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+          <img src={activeVault?.img || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop"} alt={activeVault?.title} className="w-full h-full object-cover" />
+        </div>
+
+        <div className="relative z-20 text-center md:text-left space-y-2 flex-1">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              {isUnlocked ? 'Unlocked Access' : 'Exclusive Vault'}
+            </span>
+            <span className="bg-black/60 text-gray-300 border border-gray-700 text-[10px] font-bold px-3 py-1 rounded-full font-mono">
+              {mediaList.length} Items Included
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">{activeVault?.title || 'Thika Superhighway Premium Lounge'}</h1>
+          <p className="text-gray-300 text-xs max-w-lg leading-relaxed">
+            {isUnlocked ? 'Explore the full mixed-media archive below. Tap any item to launch the immersive player.' : `Unlock this complete collection of ${mediaList.length} high-definition videos and photo sets instantly.`}
+          </p>
+        </div>
       </div>
 
       {isUnlocked ? (
         <div className="space-y-6">
-          {/* MEDIA GRID */}
+          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+            <Sparkles size={16} className="text-[#FFD700]" /> Unlocked Media Gallery
+          </h3>
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {mediaList.map((item, idx) => (
               <div 
@@ -484,7 +506,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
               >
                 <img src={item.thumb || activeVault?.img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors"></div>
-                <div className="absolute top-2 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1">
+                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1 border border-gray-800">
                   {item.type === 'video' ? <Film size={12}/> : <ImageIcon size={12}/>}
                   {item.type.toUpperCase()}
                 </div>
@@ -497,10 +519,10 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
 
           {/* ZOOM MODAL LIGHTBOX */}
           {activeModalItem && (
-            <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4">
+            <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in">
               <button 
                 onClick={() => setActiveModalItem(null)} 
-                className="absolute top-6 right-6 bg-gray-900 border border-gray-700 text-white p-3 rounded-full hover:bg-red-600 transition-colors"
+                className="absolute top-6 right-6 bg-gray-900 border border-gray-700 text-white p-3 rounded-full hover:bg-red-600 transition-colors shadow-lg z-30"
               >
                 <X size={20} />
               </button>
@@ -541,41 +563,112 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
         </div>
       ) : (
         <>
-          <div className="relative w-full aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-gray-800 flex flex-col items-center justify-center">
-            <Lock size={40} className="text-[#FFD700] mb-3 animate-pulse" />
-            <span className="text-white font-black text-sm uppercase tracking-widest">Content Locked</span>
-            <span className="text-gray-400 text-xs mt-1">Complete M-Pesa payment to reveal the {mediaList.length} items inside</span>
-          </div>
-
-          <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-5 space-y-3">
-            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">M-Pesa Phone Number</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone size={16} className="text-[#00F0FF]" /></div>
-              <input 
-                type="text" 
-                placeholder="0712345678" 
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-[#00F0FF]"
-              />
+          {/* THE "LOCKED TEASER" CARD */}
+          {checkoutStep === 0 && (
+            <div className="bg-[#12151c] rounded-2xl border border-gray-800 p-8 text-center max-w-sm mx-auto mt-6 shadow-2xl animate-in fade-in">
+              <div className="w-16 h-16 bg-[#FFD700]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
+                <Lock className="text-[#FFD700]" size={28} />
+              </div>
+              <h3 className="text-white font-bold mb-1 text-lg">Subscribe to see {activeVault?.title || 'content'}</h3>
+              <p className="text-gray-400 text-xs mb-6">{mediaList.length} media items unlock when you subscribe</p>
+              <button onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
+                <Lock size={14} className="inline mr-2 -mt-1"/> Subscribe (From KES {pricing.sneakPeek})
+              </button>
             </div>
-          </div>
+          )}
 
-          <button onClick={() => handlePayment('Full Vault', activeVault?.price || 50)} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(255,215,0,0.2)] transition-all">
-            <div className="flex items-center gap-4 text-left">
-              <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center"><Zap size={18}/></div>
-              <div><h3 className="font-black text-sm">Unlock Entire Vault</h3><p className="text-black/70 text-[10px]">{mediaList.length} mixed media items</p></div>
+          {/* 2-STEP BOTTOM SHEET CHECKOUT MODAL */}
+          {checkoutStep > 0 && (
+            <div className="fixed inset-0 z-[130] bg-black/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center sm:p-4">
+              <div className="bg-[#12151c] w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border-t sm:border border-gray-800 p-5 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 shadow-2xl">
+                
+                <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-800/80">
+                  <h3 className="text-white font-bold flex items-center gap-2 text-sm">
+                    {checkoutStep === 1 ? <Lock size={16} className="text-[#FFD700]"/> : <button onClick={()=>setCheckoutStep(1)} className="text-gray-400 hover:text-white">←</button>}
+                    {checkoutStep === 1 ? `Subscribe to ${activeVault?.title || 'Vault'}` : 'Paying with M-Pesa'}
+                  </h3>
+                  <button onClick={()=>setCheckoutStep(0)} className="text-gray-400 hover:text-white p-1 bg-gray-900 rounded-full"><X size={18}/></button>
+                </div>
+
+                {checkoutStep === 1 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-400 text-center mb-4 uppercase tracking-widest font-bold">Select Payment Method</p>
+                    
+                    {/* Active M-Pesa Button */}
+                    <button onClick={()=>setCheckoutStep(2)} className="w-full flex justify-between items-center p-3.5 rounded-xl border border-gray-700 bg-black hover:border-[#00F0FF] hover:bg-gray-900 transition-all shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-500 text-white text-[10px] font-black px-1.5 py-1 rounded">M-PESA</div>
+                        <span className="text-sm font-bold text-white">M-Pesa</span>
+                      </div>
+                      <span className="text-xs text-[#FFD700] font-bold">KES <span className="ml-1 text-gray-400">{'>'}</span></span>
+                    </button>
+                    
+                    {/* Greyed out options for Global Trust */}
+                    <div className="w-full flex justify-between items-center p-3.5 rounded-xl border border-gray-800 bg-black/40 opacity-40 cursor-not-allowed">
+                      <div className="flex items-center gap-3"><Shield size={18} className="text-blue-400"/><span className="text-sm font-bold text-white">Remitly</span></div>
+                      <span className="text-xs text-gray-400 font-bold">USD {'>'}</span>
+                    </div>
+                    <div className="w-full flex justify-between items-center p-3.5 rounded-xl border border-gray-800 bg-black/40 opacity-40 cursor-not-allowed">
+                      <div className="flex items-center gap-3"><Bitcoin size={18} className="text-[#FFD700]"/><span className="text-sm font-bold text-white">Crypto (USDT/BTC)</span></div>
+                      <span className="text-xs text-gray-400 font-bold">USD {'>'}</span>
+                    </div>
+
+                    <div className="pt-4 text-center text-xs text-gray-400">
+                      Already paid? <button onClick={()=>{ setCheckoutStep(0); setActiveTab('restore'); }} className="text-[#00F0FF] font-bold hover:underline">Restore access</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold mb-2">Select Access Tier</p>
+                    
+                    <button onClick={()=>setSelectedTierPrice(pricing.sneakPeek)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.sneakPeek ? 'border-[#FFD700] bg-[#FFD700]/10 shadow-[0_0_10px_rgba(255,215,0,0.1)]' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Sneak Peek (24 hrs)</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.sneakPeek}</span></div>
+                    </button>
+                    
+                    <button onClick={()=>setSelectedTierPrice(pricing.lifetime)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.lifetime ? 'border-[#FFD700] bg-[#FFD700]/10 shadow-[0_0_10px_rgba(255,215,0,0.1)]' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Unlock Full Vault (Lifetime)</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.lifetime}</span></div>
+                    </button>
+                    
+                    <button onClick={()=>setSelectedTierPrice(pricing.global)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.global ? 'border-[#00F0FF] bg-[#00F0FF]/10 shadow-[0_0_10px_rgba(0,240,255,0.1)]' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-white font-bold">Global All-Access (Monthly)</span>
+                        <span className="text-[#00F0FF] font-bold text-sm">KES {pricing.global}</span>
+                      </div>
+                    </button>
+
+                    <div className="pt-3 pb-1 border-t border-gray-800/80 mt-2">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Your M-Pesa Phone Number</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone size={16} className="text-[#00F0FF]" /></div>
+                        <input 
+                          type="text" 
+                          value={customerPhone} 
+                          onChange={(e)=>setCustomerPhone(e.target.value)} 
+                          placeholder="0712345678" 
+                          className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-[#00F0FF] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => { setCheckoutStep(0); handlePayment('Selected Tier', selectedTierPrice || pricing.sneakPeek); }} 
+                      className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl mt-2 transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                    >
+                      Pay KES {selectedTierPrice || pricing.sneakPeek} Now
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="text-right"><span className="font-black text-lg">KES {activeVault?.price || 50}</span></div>
-          </button>
+          )}
         </>
       )}
     </div>
   );
 };
 
-// --- Fully Restored Creator Profile Layout ---
-const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId }) => {
+// --- Creator Profile Layout with "Follow" Button ---
+const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId, setToastMsg }) => {
   if (!selectedCreator) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-gray-400">
@@ -585,17 +678,24 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
     );
   }
 
+  const pricing = selectedCreator.pricing || { sneakPeek: selectedCreator.price || 50 };
+
+  const handleFollow = () => {
+    setToastMsg("Added to your favourites!");
+    setTimeout(() => setToastMsg(''), 2000);
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
+      <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_25px_rgba(0,0,0,0.5)]">
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
-        <img src={selectedCreator.img} alt={selectedCreator.title} className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
+        <img src={selectedCreator.img} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
         
         <div className="relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#00F0FF]/50 shrink-0 shadow-[0_0_25px_rgba(0,240,255,0.3)]">
           <img src={selectedCreator.img} alt={selectedCreator.title} className="w-full h-full object-cover" />
         </div>
 
-        <div className="relative z-20 text-center md:text-left space-y-2 flex-1">
+        <div className="relative z-20 text-center md:text-left space-y-3 flex-1">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
             <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Verified Creator</span>
             <span className="text-xs text-gray-400 font-mono">{selectedCreator.mediaList?.length || 1} Media Items</span>
@@ -604,8 +704,11 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
           <p className="text-gray-300 text-xs max-w-lg leading-relaxed">Exclusive performer and content creator. Subscribe to unlock full archive streams, weekend drops, and private clips.</p>
           
           <div className="pt-2 flex justify-center md:justify-start gap-3">
-            <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-2.5 rounded-xl text-xs transition-all shadow-lg">
-              Unlock Vault (KES {selectedCreator.price || 50})
+            <button onClick={handleFollow} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition-colors flex items-center gap-2">
+              <Heart size={14}/> Follow
+            </button>
+            <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2">
+              <Lock size={14}/> Subscribe (KES {pricing.sneakPeek})
             </button>
           </div>
         </div>
@@ -948,4 +1051,329 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
               {!isLoginMode && (
                 <div className="flex items-start gap-3 pt-2">
                   <input 
-                    type="
+                    type="checkbox" 
+                    id="ageCheckPhone" 
+                    checked={isAdult}
+                    onChange={(e) => setIsAdult(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+                  />
+                  <label htmlFor="ageCheckPhone" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
+                    I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
+                  </label>
+                </div>
+              )}
+
+              <div id="recaptcha-container"></div>
+
+              <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+                {loading ? "SENDING CODE..." : "Send Verification Code"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Enter 6-Digit OTP Code</label>
+                <input 
+                  type="text" 
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456" 
+                  maxLength={6}
+                  className="w-full bg-black text-white font-mono text-center tracking-widest text-lg border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
+                {loading ? "VERIFYING..." : "Verify Code & Login"}
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => setStep('phone-input')}
+                className="w-full text-center text-xs text-gray-400 hover:text-white pt-2"
+              >
+                ← Change Phone Number
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      <div className="text-center">
+        <button onClick={() => setActiveTab(isLoginMode ? 'signup' : 'login')} className="text-xs text-gray-400 hover:text-white">
+          {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+          <span className="text-[#00F0FF] font-bold">{isLoginMode ? 'Sign up' : 'Log in'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Fully Restored Policy Layout ---
+const PolicyLayout = ({ activeTab, setActiveTab }) => {
+  const getPolicyContent = () => {
+    switch (activeTab) {
+      case 'terms':
+        return {
+          title: "Terms of Service",
+          content: "Welcome to Thika Superhighway Premium. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking. Unauthorized downloading, screen recording, or redistribution will result in immediate account termination and permanent device blacklisting."
+        };
+      case 'privacy':
+        return {
+          title: "Privacy Policy",
+          content: "We value your privacy. We only collect necessary transaction data (such as your M-Pesa phone number) required to process payments and verify active subscriptions. We never sell, rent, or share your personal data with third-party marketers."
+        };
+      case 'cookies':
+        return {
+          title: "Cookies Policy",
+          content: "We use essential cookies and local storage tokens (such as your saved M-Pesa number session) to ensure seamless video playback, authentication, and secure access across your devices."
+        };
+      case 'disclaimer':
+        return {
+          title: "Age Disclaimer",
+          content: "This website contains adult and mature entertainment content. All users, subscribers, and performers must be 18 years of age or older (or the legal age of majority in their jurisdiction). By entering the site, you certify that you meet this age requirement."
+        };
+      case 'takedown':
+        return {
+          title: "Content and Takedown Policy",
+          content: "Thika Superhighway Premium respects the intellectual property and privacy rights of all creators and individuals. If you believe your copyrighted work or personal media has been posted on our platform without authorization, we will review and remove it expeditiously."
+        };
+      default:
+        return {
+          title: "Support & Legal Information",
+          content: "For any inquiries, please contact our support team."
+        };
+    }
+  };
+
+  const policy = getPolicyContent();
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6 animate-in fade-in text-gray-300 text-xs leading-relaxed">
+      <div className="border-b border-gray-800 pb-4">
+        <h1 className="text-2xl font-black text-white">{policy.title}</h1>
+        <p className="text-gray-500 text-[11px] mt-1">Last updated: October 2026</p>
+      </div>
+
+      <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+        <p>{policy.content}</p>
+
+        {activeTab === 'takedown' && (
+          <div className="mt-6 pt-6 border-t border-gray-800 space-y-3">
+            <h3 className="font-bold text-white text-sm">How to Report a Takedown</h3>
+            <p>To submit a valid takedown notice, please send a message or email containing:</p>
+            <ul className="list-disc pl-5 space-y-1 text-gray-400">
+              <li>Direct URL link(s) to the specific content on our site.</li>
+              <li>Proof of copyright ownership or identity authorization.</li>
+              <li>Your official contact information (Email or Telegram handle).</li>
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-8 pt-6 border-t border-gray-800 bg-black/40 p-4 rounded-xl border border-gray-800/80 space-y-2">
+          <h4 className="font-bold text-white uppercase text-[10px] tracking-wider text-[#00F0FF]">Official Support Channels</h4>
+          <p className="text-gray-400 text-[11px]">Need immediate assistance or content removal? Reach out directly:</p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <a 
+              href="https://t.me/mr_exposes" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              Telegram: @mr_exposes
+            </a>
+            <a 
+              href="mailto:support@thikasuperhighwaypremium.com" 
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+            >
+              Email Support
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center pt-4">
+        <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] font-bold hover:underline">
+          ← Return to Home Feed
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Fully Restored Multi-Column Footer ---
+const Footer = ({ setActiveTab }) => {
+  return (
+    <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
+      <p className="text-[11px] leading-relaxed text-gray-400 max-w-2xl">
+        Thika Superhighway Premium brings you exclusive videos and photos from the creators you follow, with new content added all the time. Subscribe for full access, or create a free account to keep your access on every device.
+      </p>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Information</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('terms')} className="hover:text-[#00F0FF] transition-colors">Terms of Service</button></li>
+            <li><button onClick={() => setActiveTab('privacy')} className="hover:text-[#00F0FF] transition-colors">Privacy Policy</button></li>
+            <li><button onClick={() => setActiveTab('cookies')} className="hover:text-[#00F0FF] transition-colors">Cookies</button></li>
+            <li><button onClick={() => setActiveTab('disclaimer')} className="hover:text-[#00F0FF] transition-colors">Age Disclaimer</button></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Support & Help</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('restore')} className="hover:text-[#00F0FF] transition-colors text-[#00F0FF] font-bold">Restore access</button></li>
+            <li><button onClick={() => setActiveTab('membership')} className="hover:text-[#00F0FF] transition-colors">Membership Perks</button></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Content removal</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('takedown')} className="hover:text-[#00F0FF] transition-colors">Content and Takedown Policy</button></li>
+            <li><button onClick={() => setActiveTab('takedown')} className="hover:text-[#00F0FF] transition-colors">Report a takedown</button></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-300 mb-3 uppercase tracking-wider text-[10px]">Discover</h4>
+          <ul className="space-y-2 text-[11px]">
+            <li><button onClick={() => setActiveTab('home')} className="hover:text-[#00F0FF] transition-colors">Creators</button></li>
+            <li><button onClick={() => setActiveTab('trending')} className="hover:text-[#00F0FF] transition-colors">Trending</button></li>
+            <li><button onClick={() => setActiveTab('latest')} className="hover:text-[#00F0FF] transition-colors">Latest</button></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div className="pt-6 border-t border-gray-900/80 text-[10px] text-center text-gray-600">
+        © 2026 Thika Superhighway Premium. All rights reserved.
+      </div>
+    </footer>
+  );
+};
+
+// --- Main App Controller ---
+export default function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [toastMsg, setToastMsg] = useState('');
+  const [vaults, setVaults] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [customerPhone, setCustomerPhone] = useState(() => localStorage.getItem('thika_customer_phone') || '');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, price: 0, status: 'waiting' });
+  
+  const [selectedVaultId, setSelectedVaultId] = useState('');
+  const [selectedCreator, setSelectedCreator] = useState(null);
+  const [activeVault, setActiveVault] = useState(null);
+
+  const isOwner = currentUser && currentUser.email === OWNER_EMAIL;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => setCurrentUser(user));
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setToastMsg("Logged out successfully");
+    setTimeout(() => setToastMsg(''), 2500);
+  };
+
+  useEffect(() => {
+    if (customerPhone) localStorage.setItem('thika_customer_phone', customerPhone);
+  }, [customerPhone]);
+
+  useEffect(() => {
+    const fetchVaults = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "vaults"));
+        const vaultData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setVaults(vaultData);
+        if (vaultData.length > 0 && !selectedVaultId) setSelectedVaultId(vaultData[0].id);
+      } catch (error) {
+        console.error("Error fetching vaults:", error);
+      }
+    };
+    fetchVaults();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedVaultId) return;
+    const vaultRef = doc(db, 'vaults', selectedVaultId);
+    const unsubscribe = onSnapshot(vaultRef, (docSnap) => {
+      if (docSnap.exists()) setActiveVault({ id: docSnap.id, ...docSnap.data() });
+    });
+    return () => unsubscribe();
+  }, [selectedVaultId]);
+
+  const handlePayment = async (plan, price) => {
+    let formattedPhone = customerPhone.trim();
+    if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.slice(1);
+    if (!formattedPhone || formattedPhone.length < 10) {
+      setToastMsg("Enter a valid M-Pesa phone number!");
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    setPaymentModal({ isOpen: true, price, status: 'waiting' });
+
+    try {
+      const response = await fetch("/.netlify/functions/stk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: price, msisdn: formattedPhone, reference: selectedVaultId })
+      });
+      const data = await response.json();
+      if (response.ok && (data.success || data.ResponseCode === "0" || data.ResponseCode === 0)) {
+        setPaymentModal(prev => ({ ...prev, status: 'success' }));
+        setTimeout(() => {
+          setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+          setToastMsg("STK push sent! Check your phone.");
+          setTimeout(() => setToastMsg(''), 3000);
+        }, 2000);
+      } else {
+        setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+        setToastMsg("Payment failed: " + (data.message || "Try again."));
+        setTimeout(() => setToastMsg(''), 3000);
+      }
+    } catch (error) {
+      setPaymentModal({ isOpen: false, price: 0, status: 'waiting' });
+      setToastMsg("Connection error.");
+      setTimeout(() => setToastMsg(''), 3000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between">
+      {toastMsg && <Toast msg={toastMsg} />}
+
+      {paymentModal.isOpen && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl w-full max-w-sm p-6 flex flex-col items-center text-center shadow-2xl">
+            <Loader2 size={32} className="text-green-500 animate-spin mb-4" />
+            <h3 className="text-lg font-black text-white mb-2">Prompting M-Pesa</h3>
+            <p className="text-sm text-gray-400">Check <span className="text-[#00F0FF] font-mono">{customerPhone}</span> for KES {paymentModal.price}.</p>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} />
+        
+        <main>
+          {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
+            <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
+          )}
+          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
+          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} />}
+          {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
+          {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
+          {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
+          {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
+          {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
+          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && <PolicyLayout activeTab={activeTab} setActiveTab={setActiveTab} />}
+        </main>
+      </div>
+
+      <Footer setActiveTab={setActiveTab} />
+    </div>
+  );
+}
