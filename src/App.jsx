@@ -626,29 +626,45 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   );
 };
 
-// --- Home Layout ---
-const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
+// --- Home Layout / Tab Sorting Logic ---
+const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
+  // Sorting or filtering logic based on activeTab
+  let displayedVaults = [...vaults];
+
+  if (activeTab === 'latest') {
+    displayedVaults.sort((a, b) => {
+      const timeA = a.createdAt?.seconds || 0;
+      const timeB = b.createdAt?.seconds || 0;
+      return timeB - timeA;
+    });
+  } else if (activeTab === 'trending' || activeTab === 'popular') {
+    // Reverse order or simulated sorting for trending/popular
+    displayedVaults.reverse();
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('membership')}>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
-        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-        <div className="absolute bottom-6 left-6 z-20 space-y-2">
-          <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
-          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Superhighway Premium Experience</h2>
-          <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
+      {activeTab === 'home' && (
+        <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('membership')}>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
+          <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+          <div className="absolute bottom-6 left-6 z-20 space-y-2">
+            <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Superhighway Premium Experience</h2>
+            <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-            <Flame size={16} className="text-[#FFD700]"/> Exclusive Content Vaults
+            <Flame size={16} className="text-[#FFD700]"/> {activeTab === 'latest' ? 'Latest Releases' : activeTab === 'trending' ? 'Trending Content' : activeTab === 'popular' ? 'Most Popular Vaults' : 'Exclusive Content Vaults'}
           </h3>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {vaults.map((vault) => {
+          {displayedVaults.map((vault) => {
             const pricing = vault.pricing || { sneakPeek: vault.price || 50, lifetime: 150, global: 1500 };
             return (
               <div 
@@ -679,6 +695,41 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Creator Directory Layout (NEW) ---
+const CreatorDirectoryLayout = ({ vaults, setSelectedVaultId, setSelectedCreator, setActiveTab }) => {
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
+      <div>
+        <h1 className="text-2xl font-black text-white flex items-center gap-2">
+          <Star className="text-[#FFD700]" /> Verified Creators & Performers
+        </h1>
+        <p className="text-gray-400 text-xs mt-1">Explore exclusive creator channels and browse their private content archives.</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {vaults.map((vault) => (
+          <div 
+            key={vault.id} 
+            onClick={() => { setSelectedVaultId(vault.id); setSelectedCreator(vault); setActiveTab('vip'); }}
+            className="bg-[#12151c] border border-gray-800 hover:border-[#00F0FF] rounded-2xl p-5 text-center cursor-pointer transition-all space-y-3 group shadow-lg"
+          >
+            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto border-2 border-[#00F0FF]/50 shadow-[0_0_15px_rgba(0,240,255,0.2)] group-hover:scale-105 transition-transform">
+              <img src={vault.img} alt={vault.title} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm truncate">{vault.title}</h3>
+              <p className="text-[10px] text-gray-400 mt-1 font-mono">{vault.mediaList?.length || 1} Media Items</p>
+            </div>
+            <button className="w-full bg-gray-900 border border-gray-800 group-hover:bg-[#00F0FF] group-hover:text-black group-hover:border-[#00F0FF] text-[#00F0FF] font-bold py-2 rounded-xl text-xs transition-colors">
+              View Vault →
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1501,10 +1552,13 @@ export default function App() {
         
         <main>
           {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
-            <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
+            <HomeLayout activeTab={activeTab} setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
+          )}
+          {activeTab === 'creators' && (
+            <CreatorDirectoryLayout vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} setActiveTab={setActiveTab} />
           )}
           {activeTab === 'account' && <AccountLayout currentUser={currentUser} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handleLogout={handleLogout} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} setToastMsg={setToastMsg} />}
-          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} currentUser={currentUser} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
+          {activeTab === 'profile' && <CreatorProfileLayout selectedCreator={selectedCreator} currentUser={currentUser} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
           {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
           {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} currentUser={currentUser} />}
