@@ -37,7 +37,7 @@ const Logo = () => (
 );
 
 // --- Mobile Slide-Out Menu ---
-const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout }) => {
+const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout, isOwner }) => {
   if (!isOpen) return null;
   
   const handleNav = (tab) => {
@@ -55,6 +55,12 @@ const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout
         </div>
         
         <div className="flex flex-col gap-5 text-sm font-bold text-gray-300">
+          {isOwner && (
+            <button onClick={() => handleNav('admin')} className="flex items-center gap-3 text-[#00F0FF] hover:underline transition-colors bg-[#00F0FF]/10 p-3 rounded-xl border border-[#00F0FF]/30">
+              <LayoutDashboard size={20}/> Admin Control Center
+            </button>
+          )}
+
           {!currentUser ? (
             <>
               <button onClick={() => handleNav('signup')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><User size={20} className="text-gray-500"/> Create account</button>
@@ -367,7 +373,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-// --- Admin Dashboard (Updated with Creator Name & Featured Drop Toggle) ---
+// --- Admin Dashboard ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [creatorName, setCreatorName] = useState('');
   const [title, setTitle] = useState('');
@@ -659,7 +665,6 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
     displayedVaults.reverse();
   }
 
-  // Find the featured vault for the hero banner, fallback to first vault
   const featuredDrop = vaults.find(v => v.isFeatured) || vaults[0];
 
   return (
@@ -1559,7 +1564,7 @@ export default function App() {
     <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between pb-12 md:pb-0">
       {toastMsg && <Toast msg={toastMsg} />}
       
-      <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} setActiveTab={setActiveTab} currentUser={currentUser} handleLogout={handleLogout} />
+      <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} setActiveTab={setActiveTab} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} />
 
       {paymentModal.isOpen && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
@@ -1589,7 +1594,7 @@ export default function App() {
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
-          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && <PolicyLayout activeTab={activeTab} setActiveTab={setActiveTab} />}
+          {['terms', 'privacy', 'cookies', 'disclaimer', 'takedown'].includes(activeTab) && PolicyLayout({ activeTab, setActiveTab })}
         </main>
       </div>
 
