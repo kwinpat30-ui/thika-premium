@@ -10,6 +10,7 @@ import {
   Image as ImageIcon, Film, Maximize2, Bitcoin, Bookmark, Bell, Monitor, Settings, PlayCircle, Check
 } from 'lucide-react';
 import PwaInstallPrompt from './PwaInstallPrompt';
+import CreatorFeedCard from './CreatorFeedCard';
 const OWNER_EMAIL = "kwinpat30@gmail.com"; 
 
 // --- Reusable Toast Component ---
@@ -691,38 +692,25 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
           </h3>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="max-w-2xl mx-auto space-y-6">
           {displayedVaults.map((vault) => {
             const pricing = vault.pricing || { sneakPeek: vault.price || 50, lifetime: 150, global: 1500 };
             return (
-              <div 
-                key={vault.id} 
-                onClick={() => { setSelectedVaultId(vault.id); setSelectedCreator(vault); setActiveTab('vip'); }} 
-                className="relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer group bg-gray-900 border border-gray-800 hover:border-[#00F0FF]/50 transition-all shadow-lg"
-              >
-                <img src={vault.img} alt={vault.title} className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                
-                <div className="absolute top-3 right-3 flex gap-1">
-                  {vault.isFeatured && <span className="bg-[#FFD700] text-black text-[9px] font-black px-1.5 py-0.5 rounded">FEATURED</span>}
-                  <span className="bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-gray-300 border border-gray-700">
-                    {vault.mediaList?.length || 1} items
-                  </span>
-                </div>
-
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-gray-500/50">
-                    <Lock size={18} className="text-[#FFD700]" />
-                  </div>
-                </div>
-
-                <div className="absolute bottom-3 left-3 right-3">
-                  <div className="text-[10px] text-[#00F0FF] font-bold uppercase tracking-wider">{vault.creatorName || 'Verified Creator'}</div>
-                  <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title}</h4>
-                  <div className="text-[10px] text-[#FFD700] font-mono mt-0.5">From KES {pricing.sneakPeek}</div>
-                </div>
-              </div>
-            );
+      <CreatorFeedCard 
+        key={vault.id} 
+        vault={vault}
+        creator={{
+          name: vault.creator || vault.creatorName || "Verified Creator",
+          avatarUrl: vault.creatorAvatar || vault.avatarUrl || "https://via.placeholder.com/150",
+          verified: true
+        }}
+        onUnlock={() => {
+          setSelectedVaultId(vault.id); 
+          setSelectedCreator(vault); 
+          setActiveTab('vip');
+        }}
+      />
+    );
           })}
         </div>
       </div>
