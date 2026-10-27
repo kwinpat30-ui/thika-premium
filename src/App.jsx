@@ -704,9 +704,16 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
         key={vault.id} 
         vault={{
           ...vault,
-          coverUrl: vault.img, 
-          videoCount: (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video').length,
-          photoCount: (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image').length
+          coverUrl: vault.img,
+          image: vault.img,
+          thumbnail: vault.img,
+          img: vault.img,
+          videoCount: (vault.medialist || vault.mediaList || []).length > 0 
+            ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video' || m.mediaType === 'video' || !m.type).length 
+            : 1,
+          photoCount: (vault.medialist || vault.mediaList || []).length > 0 
+            ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image' || m.mediaType === 'image').length 
+            : 1
         }}
         creator={{
           name: vault.creatorName || "Verified Creator",
@@ -719,6 +726,7 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
           setActiveTab('vip');
         }}
       />
+    
     );
           })}
         </div>
