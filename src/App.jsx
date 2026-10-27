@@ -9,7 +9,7 @@ import {
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, 
   Image as ImageIcon, Film, Maximize2, Bitcoin, Bookmark, Bell, Monitor, Settings, PlayCircle, Check
 } from 'lucide-react';
-
+import PwaInstallPrompt from './PwaInstallPrompt';
 const OWNER_EMAIL = "kwinpat30@gmail.com"; 
 
 // --- Reusable Toast Component ---
@@ -1600,6 +1600,7 @@ export default function App() {
 
       <Footer setActiveTab={setActiveTab} />
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsMobileMenuOpen={setIsMobileMenuOpen} currentUser={currentUser} />
+      <PwaInstallPrompt />
     </div>
   );
 }
