@@ -136,7 +136,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           ) : (
             <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">Log in</button>
           )}
-          <button onClick={() => setActiveTab('vip')} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5">
+          <button onClick={() => setActiveTab('membership')} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5">
             <Crown size={14} /> Subscribe
           </button>
         </div>
@@ -159,11 +159,10 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
-// --- User Account Dashboard (NEW) ---
+// --- User Account Dashboard ---
 const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLogout, setActiveTab, setToastMsg }) => {
   const [subTab, setSubTab] = useState('subscriptions');
   const [bookmarks, setBookmarks] = useState(() => JSON.parse(localStorage.getItem('thika_bookmarks') || '[]'));
-  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('thika_history') || '[]'));
 
   if (!currentUser) {
     setActiveTab('login');
@@ -179,7 +178,6 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in flex flex-col md:flex-row gap-8">
       
-      {/* Sidebar Navigation (Desktop) / Top Scroll (Mobile) */}
       <div className="w-full md:w-64 shrink-0 space-y-2 flex md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 border-gray-800">
         <div className="hidden md:block mb-6 px-4">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#00F0FF] to-blue-600 flex items-center justify-center text-xl font-black text-white mb-3">
@@ -213,9 +211,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 min-w-0">
-        
         {subTab === 'subscriptions' && (
           <div className="space-y-4">
             <h3 className="text-lg font-black text-white flex items-center gap-2"><Crown className="text-[#FFD700]"/> Unlocked Vaults</h3>
@@ -334,7 +330,6 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
                 <LogOut size={16}/> Sign Out Securely
               </button>
             </div>
-
           </div>
         )}
       </div>
@@ -342,8 +337,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-
-// --- Admin Dashboard (Tiered Pricing Setup) ---
+// --- Admin Dashboard ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [title, setTitle] = useState('');
   const [sneakPeekPrice, setSneakPeekPrice] = useState('50');
@@ -364,25 +358,17 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const handleCoverUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setIsImageUploading(true);
     setToastMsg("Uploading cover thumbnail...");
-
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
       const data = await res.json();
       if (data.secure_url) {
         setImgUrl(data.secure_url);
         setToastMsg("Cover thumbnail uploaded!");
-      } else {
-        throw new Error(data.error?.message || "Upload failed");
       }
     } catch (error) {
       setToastMsg("Error uploading image: " + error.message);
@@ -424,11 +410,9 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     } else if (type === 'image') {
       setIsImageUploading(true);
       for (const file of files) {
-        setToastMsg(`Uploading gallery photo...`);
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
         try {
           const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
           const data = await res.json();
@@ -451,23 +435,17 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-
     setLoading(true);
     try {
       const docRef = await addDoc(collection(db, "vaults"), {
         title: title.trim(),
-        pricing: {
-          sneakPeek: Number(sneakPeekPrice),
-          lifetime: Number(lifetimePrice),
-          global: Number(globalPrice)
-        },
+        pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
         mediaList: mediaList, 
         status: 'locked',
         createdAt: new Date()
       });
-
       setVaults(prev => [...prev, { 
         id: docRef.id, title, 
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) }, 
@@ -520,13 +498,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           <form onSubmit={handleCreateVault} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Vault / Creator Title</label>
-              <input 
-                type="text" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-                placeholder="E.G. Nairobi Nightclub VIP Set" 
-                className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]"
-              />
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="E.G. Nairobi Nightclub VIP Set" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]" />
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -627,7 +599,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('vip')}>
+      <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('membership')}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
         <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute bottom-6 left-6 z-20 space-y-2">
@@ -681,7 +653,7 @@ const HomeLayout = ({ setActiveTab, vaults, setSelectedVaultId, setSelectedCreat
   );
 };
 
-// --- VIP Layout with "Locked Teaser", 2-Step Checkout, and Mixed Media Grid ---
+// --- VIP Layout ---
 const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab, setToastMsg }) => {
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
@@ -716,7 +688,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
       
-      {/* 🌟 LUXURY VAULT HEADER */}
       <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_30px_rgba(0,240,255,0.1)]">
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
         <img src={activeVault?.img || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop"} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
@@ -767,7 +738,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
             ))}
           </div>
 
-          {/* ZOOM MODAL LIGHTBOX */}
           {activeModalItem && (
             <div className="fixed inset-0 z-[120] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in">
               <div className="absolute top-6 right-6 flex items-center gap-3 z-30">
@@ -792,13 +762,11 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                   <img src={activeModalItem.urlOrId} alt="" className="w-full h-full object-contain" />
                 )}
 
-                {/* WATERMARK */}
                 <div className="absolute z-20 text-white/25 font-mono text-xs tracking-widest pointer-events-none font-bold select-none bg-black/10 px-2 py-1 rounded backdrop-blur-[1px]" style={{ top: position.top, left: position.left }}>
                   {customerPhone || '+254 712 345 678'} &bull; {currentTime}
                 </div>
               </div>
 
-              {/* HORIZONTAL SCROLL REEL */}
               <div className="w-full max-w-3xl mt-4 flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                 {mediaList.map((m, i) => (
                   <div 
@@ -815,7 +783,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
         </div>
       ) : (
         <>
-          {/* THE "LOCKED TEASER" CARD */}
           {checkoutStep === 0 && (
             <div className="bg-[#12151c] rounded-2xl border border-gray-800 p-8 text-center max-w-sm mx-auto mt-6 shadow-2xl animate-in fade-in">
               <div className="w-16 h-16 bg-[#FFD700]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
@@ -829,7 +796,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
             </div>
           )}
 
-          {/* 2-STEP BOTTOM SHEET CHECKOUT MODAL */}
           {checkoutStep > 0 && (
             <div className="fixed inset-0 z-[130] bg-black/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center sm:p-4">
               <div className="bg-[#12151c] w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border-t sm:border border-gray-800 p-5 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 shadow-2xl">
@@ -890,20 +856,11 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Your M-Pesa Phone Number</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone size={16} className="text-[#00F0FF]" /></div>
-                        <input 
-                          type="text" 
-                          value={customerPhone} 
-                          onChange={(e)=>setCustomerPhone(e.target.value)} 
-                          placeholder="0712345678" 
-                          className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-[#00F0FF] focus:outline-none"
-                        />
+                        <input type="text" value={customerPhone} onChange={(e)=>setCustomerPhone(e.target.value)} placeholder="0712345678" className="w-full bg-black text-white font-mono border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-[#00F0FF] focus:outline-none" />
                       </div>
                     </div>
 
-                    <button 
-                      onClick={() => { setCheckoutStep(0); handlePayment('Selected Tier', selectedTierPrice || pricing.sneakPeek); }} 
-                      className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl mt-2 transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
-                    >
+                    <button onClick={() => { setCheckoutStep(0); handlePayment('Selected Tier', selectedTierPrice || pricing.sneakPeek); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl mt-2 transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
                       Pay KES {selectedTierPrice || pricing.sneakPeek} Now
                     </button>
                   </div>
@@ -917,7 +874,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   );
 };
 
-// --- Creator Profile Layout with "Follow" Button ---
+// --- Creator Profile Layout ---
 const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId, setToastMsg }) => {
   if (!selectedCreator) {
     return (
@@ -967,8 +924,8 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
   );
 };
 
-// --- Fully Restored Membership Layout ---
-const MembershipLayout = ({ setActiveTab }) => {
+// --- Smart Membership Layout ---
+const MembershipLayout = ({ setActiveTab, currentUser }) => {
   return (
     <div className="max-w-xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
       <div className="text-center space-y-2">
@@ -998,18 +955,26 @@ const MembershipLayout = ({ setActiveTab }) => {
       </div>
 
       <div className="space-y-3 pt-4">
-        <button onClick={() => setActiveTab('signup')} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
-          Create a free account
-        </button>
-        <button onClick={() => setActiveTab('login')} className="w-full bg-[#12151c] hover:bg-gray-800 text-white font-bold py-4 rounded-xl text-xs border border-gray-800 transition-colors">
-          Log in
-        </button>
+        {!currentUser ? (
+          <>
+            <button onClick={() => setActiveTab('signup')} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+              Create a free account
+            </button>
+            <button onClick={() => setActiveTab('login')} className="w-full bg-[#12151c] hover:bg-gray-800 text-white font-bold py-4 rounded-xl text-xs border border-gray-800 transition-colors">
+              Log in
+            </button>
+          </>
+        ) : (
+          <button onClick={() => setActiveTab('home')} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)]">
+            Explore Premium Vaults
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-// --- Fully Restored Restore Layout ---
+// --- Restore Layout ---
 const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
   const [phone, setPhone] = useState('');
   const [mpesaCode, setMpesaCode] = useState('');
@@ -1022,28 +987,18 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-    
     setLoading(true);
     try {
-      const q = query(
-        collection(db, "transactions"), 
-        where("mpesaCode", "==", mpesaCode.trim().toUpperCase()),
-        where("phone", "==", phone.trim())
-      );
+      const q = query(collection(db, "transactions"), where("mpesaCode", "==", mpesaCode.trim().toUpperCase()), where("phone", "==", phone.trim()));
       const querySnapshot = await getDocs(q);
-
       if (!querySnapshot.empty) {
         setToastMsg("Access code verified! Restoring session...");
-        setTimeout(() => {
-          setToastMsg('');
-          setActiveTab('vip');
-        }, 2000);
+        setTimeout(() => { setToastMsg(''); setActiveTab('vip'); }, 2000);
       } else {
         setToastMsg("No matching transaction found. Check code & phone.");
         setTimeout(() => setToastMsg(''), 4000);
       }
     } catch (error) {
-      console.error("Restore error:", error);
       setToastMsg("Error verifying transaction. Try again.");
       setTimeout(() => setToastMsg(''), 4000);
     } finally {
@@ -1061,41 +1016,25 @@ const RestoreLayout = ({ setActiveTab, setToastMsg }) => {
       <form onSubmit={handleRestore} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
         <div>
           <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone number you paid with</label>
-          <input 
-            type="text" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="0712 345 678" 
-            className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-          />
+          <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]" />
         </div>
-
         <div>
           <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Payment code</label>
-          <input 
-            type="text" 
-            value={mpesaCode}
-            onChange={(e) => setMpesaCode(e.target.value.toUpperCase())}
-            placeholder="E.G. SJK3ABC12D" 
-            className="w-full bg-black text-white font-mono uppercase text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-          />
+          <input type="text" value={mpesaCode} onChange={(e) => setMpesaCode(e.target.value.toUpperCase())} placeholder="E.G. SJK3ABC12D" className="w-full bg-black text-white font-mono uppercase text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]" />
         </div>
-
         <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
           {loading ? "VERIFYING RECEIPT..." : "Restore access"}
         </button>
       </form>
 
       <div className="text-center">
-        <button onClick={() => setActiveTab('membership')} className="text-xs text-gray-400 hover:text-white">
-          Back to <span className="text-[#00F0FF] font-bold">Membership</span>
-        </button>
+        <button onClick={() => setActiveTab('membership')} className="text-xs text-gray-400 hover:text-white">Back to <span className="text-[#00F0FF] font-bold">Membership</span></button>
       </div>
     </div>
   );
 };
 
-// --- Fully Restored Auth Layout ---
+// --- Auth Layout ---
 const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   const [method, setMethod] = useState('phone');
   const [email, setEmail] = useState('');
@@ -1110,10 +1049,7 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   useEffect(() => {
     if (method === 'phone' && !window.recaptchaVerifier) {
       try {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible',
-          callback: () => {}
-        });
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible', callback: () => {} });
       } catch (e) {
         console.error("Recaptcha error:", e);
       }
@@ -1141,10 +1077,7 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
         await createUserWithEmailAndPassword(auth, email, password);
         setToastMsg("Account created successfully!");
       }
-      setTimeout(() => {
-        setToastMsg('');
-        setActiveTab('home');
-      }, 1500);
+      setTimeout(() => { setToastMsg(''); setActiveTab('home'); }, 1500);
     } catch (error) {
       setToastMsg("Error: " + error.message);
       setTimeout(() => setToastMsg(''), 4000);
@@ -1163,13 +1096,11 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
     let formattedPhone = phone.trim();
     if (formattedPhone.startsWith('0')) formattedPhone = '+254' + formattedPhone.slice(1);
     if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone;
-
     if (formattedPhone.length < 10) {
       setToastMsg("Please enter a valid phone number.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-
     setLoading(true);
     try {
       const appVerifier = window.recaptchaVerifier;
@@ -1179,7 +1110,6 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
       setToastMsg("Verification code sent via SMS!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
-      console.error("SMS error:", error);
       setToastMsg("Failed to send SMS: " + error.message);
       setTimeout(() => setToastMsg(''), 4000);
     } finally {
@@ -1194,15 +1124,11 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
-
     setLoading(true);
     try {
       await confirmationResult.confirm(otp);
       setToastMsg("Phone authentication successful!");
-      setTimeout(() => {
-        setToastMsg('');
-        setActiveTab('home');
-      }, 1500);
+      setTimeout(() => { setToastMsg(''); setActiveTab('home'); }, 1500);
     } catch (error) {
       setToastMsg("Invalid verification code.");
       setTimeout(() => setToastMsg(''), 4000);
@@ -1219,61 +1145,26 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-2 bg-[#12151c] p-1.5 rounded-xl border border-gray-800">
-        <button 
-          type="button" 
-          onClick={() => { setMethod('phone'); setStep('phone-input'); }}
-          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'phone' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-        >
-          📱 Phone (SMS OTP)
-        </button>
-        <button 
-          type="button" 
-          onClick={() => setMethod('email')}
-          className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'email' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-        >
-          ✉️ Email & Password
-        </button>
+        <button type="button" onClick={() => { setMethod('phone'); setStep('phone-input'); }} className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'phone' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}>📱 Phone (SMS OTP)</button>
+        <button type="button" onClick={() => setMethod('email')} className={`py-2 text-xs font-bold rounded-lg transition-all ${method === 'email' ? 'bg-[#00F0FF] text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}>✉️ Email & Password</button>
       </div>
 
       {method === 'email' ? (
         <form onSubmit={handleEmailSubmit} className="space-y-4 bg-[#12151c] border border-gray-800 rounded-2xl p-6">
           <div>
             <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Email address</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com" 
-              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-            />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]" />
           </div>
-
           <div>
             <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" 
-              className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]" />
           </div>
-
           {!isLoginMode && (
             <div className="flex items-start gap-3 pt-2">
-              <input 
-                type="checkbox" 
-                id="ageCheckEmail" 
-                checked={isAdult}
-                onChange={(e) => setIsAdult(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
-              />
-              <label htmlFor="ageCheckEmail" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
-                I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
-              </label>
+              <input type="checkbox" id="ageCheckEmail" checked={isAdult} onChange={(e) => setIsAdult(e.target.checked)} className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer" />
+              <label htmlFor="ageCheckEmail" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.</label>
             </div>
           )}
-
           <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
             {loading ? "PROCESSING..." : (isLoginMode ? 'Log in with Email' : 'Create account')}
           </button>
@@ -1285,36 +1176,17 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
               <div>
                 <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Phone Number</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Phone size={16} className="text-[#00F0FF]" />
-                  </div>
-                  <input 
-                    type="text" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0712 345 678" 
-                    className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#00F0FF]"
-                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone size={16} className="text-[#00F0FF]" /></div>
+                  <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-[#00F0FF]" />
                 </div>
               </div>
-
               {!isLoginMode && (
                 <div className="flex items-start gap-3 pt-2">
-                  <input 
-                    type="checkbox" 
-                    id="ageCheckPhone" 
-                    checked={isAdult}
-                    onChange={(e) => setIsAdult(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
-                  />
-                  <label htmlFor="ageCheckPhone" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">
-                    I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.
-                  </label>
+                  <input type="checkbox" id="ageCheckPhone" checked={isAdult} onChange={(e) => setIsAdult(e.target.checked)} className="mt-1 w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer" />
+                  <label htmlFor="ageCheckPhone" className="text-[11px] text-gray-400 cursor-pointer leading-relaxed">I am 18 or older and accept the <span className="text-[#00F0FF] underline">Terms</span> and <span className="text-[#00F0FF] underline">Privacy Policy</span>.</label>
                 </div>
               )}
-
               <div id="recaptcha-container"></div>
-
               <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
                 {loading ? "SENDING CODE..." : "Send Verification Code"}
               </button>
@@ -1323,27 +1195,12 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Enter 6-Digit OTP Code</label>
-                <input 
-                  type="text" 
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456" 
-                  maxLength={6}
-                  className="w-full bg-black text-white font-mono text-center tracking-widest text-lg border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
-                />
+                <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" maxLength={6} className="w-full bg-black text-white font-mono text-center tracking-widest text-lg border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]" />
               </div>
-
               <button type="submit" disabled={loading} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl text-xs transition-all disabled:opacity-50">
                 {loading ? "VERIFYING..." : "Verify Code & Login"}
               </button>
-
-              <button 
-                type="button" 
-                onClick={() => setStep('phone-input')}
-                className="w-full text-center text-xs text-gray-400 hover:text-white pt-2"
-              >
-                ← Change Phone Number
-              </button>
+              <button type="button" onClick={() => setStep('phone-input')} className="w-full text-center text-xs text-gray-400 hover:text-white pt-2">← Change Phone Number</button>
             </form>
           )}
         </div>
@@ -1359,40 +1216,22 @@ const AuthLayout = ({ setActiveTab, setToastMsg, isLoginMode }) => {
   );
 };
 
-// --- Fully Restored Policy Layout ---
+// --- Policy Layout ---
 const PolicyLayout = ({ activeTab, setActiveTab }) => {
   const getPolicyContent = () => {
     switch (activeTab) {
       case 'terms':
-        return {
-          title: "Terms of Service",
-          content: "Welcome to Thika Superhighway Premium. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking. Unauthorized downloading, screen recording, or redistribution will result in immediate account termination and permanent device blacklisting."
-        };
+        return { title: "Terms of Service", content: "Welcome to Thika Superhighway Premium. By accessing or subscribing to content on our platform, you agree to these terms. All purchases made via M-Pesa are final. Content is protected by digital rights management and anti-piracy tracking." };
       case 'privacy':
-        return {
-          title: "Privacy Policy",
-          content: "We value your privacy. We only collect necessary transaction data (such as your M-Pesa phone number) required to process payments and verify active subscriptions. We never sell, rent, or share your personal data with third-party marketers."
-        };
+        return { title: "Privacy Policy", content: "We value your privacy. We only collect necessary transaction data (such as your M-Pesa phone number) required to process payments and verify active subscriptions." };
       case 'cookies':
-        return {
-          title: "Cookies Policy",
-          content: "We use essential cookies and local storage tokens (such as your saved M-Pesa number session) to ensure seamless video playback, authentication, and secure access across your devices."
-        };
+        return { title: "Cookies Policy", content: "We use essential cookies and local storage tokens to ensure seamless video playback, authentication, and secure access across your devices." };
       case 'disclaimer':
-        return {
-          title: "Age Disclaimer",
-          content: "This website contains adult and mature entertainment content. All users, subscribers, and performers must be 18 years of age or older (or the legal age of majority in their jurisdiction). By entering the site, you certify that you meet this age requirement."
-        };
+        return { title: "Age Disclaimer", content: "This website contains adult and mature entertainment content. All users, subscribers, and performers must be 18 years of age or older." };
       case 'takedown':
-        return {
-          title: "Content and Takedown Policy",
-          content: "Thika Superhighway Premium respects the intellectual property and privacy rights of all creators and individuals. If you believe your copyrighted work or personal media has been posted on our platform without authorization, we will review and remove it expeditiously."
-        };
+        return { title: "Content and Takedown Policy", content: "Thika Superhighway Premium respects intellectual property and privacy rights. If you believe your copyrighted work or personal media has been posted without authorization, we will remove it expeditiously." };
       default:
-        return {
-          title: "Support & Legal Information",
-          content: "For any inquiries, please contact our support team."
-        };
+        return { title: "Support & Legal Information", content: "For any inquiries, please contact our support team." };
     }
   };
 
@@ -1407,51 +1246,23 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
 
       <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
         <p>{policy.content}</p>
-
-        {activeTab === 'takedown' && (
-          <div className="mt-6 pt-6 border-t border-gray-800 space-y-3">
-            <h3 className="font-bold text-white text-sm">How to Report a Takedown</h3>
-            <p>To submit a valid takedown notice, please send a message or email containing:</p>
-            <ul className="list-disc pl-5 space-y-1 text-gray-400">
-              <li>Direct URL link(s) to the specific content on our site.</li>
-              <li>Proof of copyright ownership or identity authorization.</li>
-              <li>Your official contact information (Email or Telegram handle).</li>
-            </ul>
-          </div>
-        )}
-
         <div className="mt-8 pt-6 border-t border-gray-800 bg-black/40 p-4 rounded-xl border border-gray-800/80 space-y-2">
           <h4 className="font-bold text-white uppercase text-[10px] tracking-wider text-[#00F0FF]">Official Support Channels</h4>
-          <p className="text-gray-400 text-[11px]">Need immediate assistance or content removal? Reach out directly:</p>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <a 
-              href="https://t.me/mr_exposes" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-            >
-              Telegram: @mr_exposes
-            </a>
-            <a 
-              href="mailto:support@thikasuperhighwaypremium.com" 
-              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-            >
-              Email Support
-            </a>
+            <a href="https://t.me/mr_exposes" target="_blank" rel="noreferrer" className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF]/20 px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">Telegram: @mr_exposes</a>
+            <a href="mailto:support@thikasuperhighwaypremium.com" className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">Email Support</a>
           </div>
         </div>
       </div>
 
       <div className="text-center pt-4">
-        <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] font-bold hover:underline">
-          ← Return to Home Feed
-        </button>
+        <button onClick={() => setActiveTab('home')} className="text-xs text-[#00F0FF] font-bold hover:underline">← Return to Home Feed</button>
       </div>
     </div>
   );
 };
 
-// --- Fully Restored Multi-Column Footer ---
+// --- Footer ---
 const Footer = ({ setActiveTab }) => {
   return (
     <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 pb-24 md:pb-8 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
@@ -1622,7 +1433,7 @@ export default function App() {
           {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
           {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
-          {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} />}
+          {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} currentUser={currentUser} />}
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'signup' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={false} />}
           {activeTab === 'login' && <AuthLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} isLoginMode={true} />}
