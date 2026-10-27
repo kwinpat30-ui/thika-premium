@@ -74,6 +74,32 @@ const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout
   );
 };
 
+// --- Mobile Bottom Navigation Bar (NEW) ---
+const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen }) => {
+  return (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-t border-gray-800 pb-2">
+      <div className="flex justify-around items-center h-16">
+        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 w-1/4 ${activeTab === 'home' ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-300'}`}>
+          <Home size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Home</span>
+        </button>
+        <button onClick={() => setActiveTab('creators')} className={`flex flex-col items-center gap-1 w-1/4 ${activeTab === 'creators' ? 'text-[#00F0FF]' : 'text-gray-500 hover:text-gray-300'}`}>
+          <Compass size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Explore</span>
+        </button>
+        <button onClick={() => setActiveTab('membership')} className={`flex flex-col items-center gap-1 w-1/4 ${activeTab === 'membership' ? 'text-[#FFD700]' : 'text-gray-500 hover:text-gray-300'}`}>
+          <Crown size={22} className={activeTab === 'membership' ? 'text-[#FFD700]' : ''} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Subscribe</span>
+        </button>
+        <button onClick={() => setIsMobileMenuOpen(true)} className="flex flex-col items-center gap-1 w-1/4 text-gray-500 hover:text-gray-300">
+          <User size={22} />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Account</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // --- Top Navigation Bar ---
 const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner, setIsMobileMenuOpen }) => {
   return (
@@ -1248,7 +1274,7 @@ const PolicyLayout = ({ activeTab, setActiveTab }) => {
 // --- Fully Restored Multi-Column Footer ---
 const Footer = ({ setActiveTab }) => {
   return (
-    <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
+    <footer className="bg-[#05070a] border-t border-gray-800/80 px-4 py-8 mt-16 pb-24 md:pb-8 text-xs text-gray-500 space-y-6 max-w-6xl mx-auto w-full rounded-t-2xl">
       <p className="text-[11px] leading-relaxed text-gray-400 max-w-2xl">
         Thika Superhighway Premium brings you exclusive videos and photos from the creators you follow, with new content added all the time. Subscribe for full access, or create a free account to keep your access on every device.
       </p>
@@ -1387,7 +1413,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between">
+    <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between pb-12 md:pb-0">
       {toastMsg && <Toast msg={toastMsg} />}
       
       <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} setActiveTab={setActiveTab} currentUser={currentUser} handleLogout={handleLogout} />
@@ -1421,6 +1447,7 @@ export default function App() {
       </div>
 
       <Footer setActiveTab={setActiveTab} />
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} setIsMobileMenuOpen={setIsMobileMenuOpen} />
     </div>
   );
 }
