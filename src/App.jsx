@@ -160,9 +160,20 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 };
 
 // --- User Account Dashboard ---
-const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLogout, setActiveTab, setToastMsg }) => {
+const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLogout, setActiveTab, setSelectedVaultId, setSelectedCreator, setToastMsg }) => {
   const [subTab, setSubTab] = useState('subscriptions');
   const [bookmarks, setBookmarks] = useState(() => JSON.parse(localStorage.getItem('thika_bookmarks') || '[]'));
+  const [followedCreators, setFollowedCreators] = useState([]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(collection(db, "follows"), where("userId", "==", currentUser.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setFollowedCreators(list);
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
 
   if (!currentUser) {
     setActiveTab('login');
@@ -264,9 +275,29 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
         {subTab === 'following' && (
           <div className="space-y-4">
             <h3 className="text-lg font-black text-white flex items-center gap-2"><Heart className="text-red-400"/> Followed Creators</h3>
-            <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center">
-              <p className="text-sm font-bold text-gray-300">You are not following any creators yet.</p>
-            </div>
+            <p className="text-xs text-gray-400 pb-4 border-b border-gray-800">Creators you have followed for quick access.</p>
+            
+            {followedCreators.length === 0 ? (
+              <div className="bg-[#12151c] border border-gray-800 border-dashed rounded-2xl p-10 text-center space-y-3">
+                <Heart size={32} className="text-gray-600 mx-auto" />
+                <p className="text-sm font-bold text-gray-300">You are not following any creators yet.</p>
+                <button onClick={() => setActiveTab('creators')} className="text-xs text-[#00F0FF] hover:underline font-bold">Discover Creators</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {followedCreators.map((creator) => (
+                  <div 
+                    key={creator.id} 
+                    onClick={() => { setSelectedVaultId(creator.creatorId); setSelectedCreator(creator); setActiveTab('vip'); }}
+                    className="bg-[#12151c] border border-gray-800 rounded-xl p-4 text-center cursor-pointer hover:border-[#00F0FF] transition-all space-y-2 shadow-lg"
+                  >
+                    <img src={creator.img} alt={creator.title} className="w-16 h-16 rounded-full object-cover mx-auto border-2 border-[#00F0FF]/50" />
+                    <h4 className="text-white font-bold text-xs truncate">{creator.title}</h4>
+                    <span className="text-[10px] text-[#00F0FF] font-bold">View Vault →</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -875,7 +906,19 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
 };
 
 // --- Creator Profile Layout ---
-const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultId, setToastMsg }) => {
+const CreatorProfileLayout = ({ selectedCreator, currentUser, setActiveTab, setSelectedVaultId, setToastMsg }) => {
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser || !selectedCreator?.id) return;
+    const checkFollow = async () => {
+      const q = query(collection(db, "follows"), where("userId", "==", currentUser.uid), where("creatorId", "==", selectedCreator.id));
+      const snap = await getDocs(q);
+      setIsFollowing(!snap.empty);
+    };
+    checkFollow();
+  }, [currentUser, selectedCreator]);
+
   if (!selectedCreator) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center text-gray-400">
@@ -887,9 +930,40 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
 
   const pricing = selectedCreator.pricing || { sneakPeek: selectedCreator.price || 50 };
 
-  const handleFollow = () => {
-    setToastMsg("Added to your favourites!");
-    setTimeout(() => setToastMsg(''), 2000);
+  const handleToggleFollow = async () => {
+    if (!currentUser) {
+      setToastMsg("Please log in to follow creators.");
+      setTimeout(() => setToastMsg(''), 3000);
+      setActiveTab('login');
+      return;
+    }
+
+    try {
+      const q = query(collection(db, "follows"), where("userId", "==", currentUser.uid), where("creatorId", "==", selectedCreator.id));
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        for (const d of snap.docs) {
+          await deleteDoc(doc(db, "follows", d.id));
+        }
+        setIsFollowing(false);
+        setToastMsg("Removed from favourites.");
+      } else {
+        await addDoc(collection(db, "follows"), {
+          userId: currentUser.uid,
+          creatorId: selectedCreator.id,
+          title: selectedCreator.title,
+          img: selectedCreator.img,
+          createdAt: new Date()
+        });
+        setIsFollowing(true);
+        setToastMsg("Added to your favourites!");
+      }
+      setTimeout(() => setToastMsg(''), 2000);
+    } catch (error) {
+      setToastMsg("Error updating favorites.");
+      setTimeout(() => setToastMsg(''), 3000);
+    }
   };
 
   return (
@@ -911,8 +985,8 @@ const CreatorProfileLayout = ({ selectedCreator, setActiveTab, setSelectedVaultI
           <p className="text-gray-300 text-xs max-w-lg leading-relaxed">Exclusive performer and content creator. Subscribe to unlock full archive streams, weekend drops, and private clips.</p>
           
           <div className="pt-2 flex justify-center md:justify-start gap-3">
-            <button onClick={handleFollow} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition-colors flex items-center gap-2">
-              <Heart size={14}/> Follow
+            <button onClick={handleToggleFollow} className={`border font-bold px-6 py-3 rounded-xl text-xs transition-colors flex items-center gap-2 ${isFollowing ? 'bg-[#00F0FF]/10 text-[#00F0FF] border-[#00F0FF]/40' : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'}`}>
+              <Heart size={14} className={isFollowing ? 'fill-[#00F0FF]' : ''}/> {isFollowing ? 'Following' : 'Follow'}
             </button>
             <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2">
               <Lock size={14}/> Subscribe (KES {pricing.sneakPeek})
@@ -1429,8 +1503,8 @@ export default function App() {
           {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
             <HomeLayout setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
           )}
-          {activeTab === 'account' && <AccountLayout currentUser={currentUser} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handleLogout={handleLogout} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
-          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
+          {activeTab === 'account' && <AccountLayout currentUser={currentUser} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handleLogout={handleLogout} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} setToastMsg={setToastMsg} />}
+          {activeTab === 'creators' && <CreatorProfileLayout selectedCreator={selectedCreator} currentUser={currentUser} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
           {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
           {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} currentUser={currentUser} />}
