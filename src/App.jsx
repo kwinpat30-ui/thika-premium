@@ -35,13 +35,57 @@ const Logo = () => (
   </div>
 );
 
+// --- Mobile Slide-Out Menu ---
+const MobileMenu = ({ isOpen, setIsOpen, setActiveTab, currentUser, handleLogout }) => {
+  if (!isOpen) return null;
+  
+  const handleNav = (tab) => {
+    setActiveTab(tab);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex animate-in fade-in">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsOpen(false)}></div>
+      <div className="relative w-72 h-full bg-[#0A0C10] border-r border-gray-800 p-6 flex flex-col shadow-2xl animate-in slide-in-from-left">
+        <div className="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+          <span className="text-white font-black text-lg">Menu</span>
+          <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white bg-gray-900 p-1.5 rounded-full"><X size={18}/></button>
+        </div>
+        
+        <div className="flex flex-col gap-5 text-sm font-bold text-gray-300">
+          {!currentUser ? (
+            <>
+              <button onClick={() => handleNav('signup')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><User size={20} className="text-gray-500"/> Create account</button>
+              <button onClick={() => handleNav('login')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><LogOut size={20} className="text-gray-500"/> Log in</button>
+            </>
+          ) : (
+            <button onClick={() => { handleLogout(); setIsOpen(false); }} className="flex items-center gap-3 hover:text-red-400 transition-colors"><LogOut size={20} className="text-gray-500"/> Log out</button>
+          )}
+          
+          <button onClick={() => handleNav('restore')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><History size={20} className="text-gray-500"/> Restore access</button>
+          <button onClick={() => handleNav('creators')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><Star size={20} className="text-gray-500"/> Creators</button>
+          <a href="https://t.me/mr_exposes" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><Send size={20} className="text-[#00F0FF]"/> Telegram channel</a>
+          <button onClick={() => handleNav('membership')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><Crown size={20} className="text-[#FFD700]"/> Membership Perks</button>
+          <button onClick={() => handleNav('takedown')} className="flex items-center gap-3 hover:text-[#00F0FF] transition-colors"><Shield size={20} className="text-gray-500"/> Get help / Support</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Top Navigation Bar ---
-const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner }) => {
+const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner, setIsMobileMenuOpen }) => {
   return (
     <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        <div onClick={() => setActiveTab('home')}>
-          <Logo />
+        
+        {/* Hamburger + Logo */}
+        <div className="flex items-center gap-3">
+          <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-300 hover:text-white p-1">
+            <Menu size={24} />
+          </button>
+          <div onClick={() => setActiveTab('home')}><Logo /></div>
         </div>
 
         <div className="hidden md:flex relative flex-1 max-w-md">
@@ -57,7 +101,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 
         <div className="flex items-center gap-3">
           {currentUser ? (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               {isOwner && (
                 <button 
                   onClick={() => setActiveTab('admin')} 
@@ -1253,6 +1297,7 @@ const Footer = ({ setActiveTab }) => {
 // --- Main App Controller ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [vaults, setVaults] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -1344,6 +1389,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0A0C10] text-gray-200 font-sans selection:bg-[#00F0FF] selection:text-black flex flex-col justify-between">
       {toastMsg && <Toast msg={toastMsg} />}
+      
+      <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} setActiveTab={setActiveTab} currentUser={currentUser} handleLogout={handleLogout} />
 
       {paymentModal.isOpen && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
@@ -1356,7 +1403,7 @@ export default function App() {
       )}
 
       <div>
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} />
+        <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} setIsMobileMenuOpen={setIsMobileMenuOpen} />
         
         <main>
           {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
