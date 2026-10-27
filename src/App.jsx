@@ -7,7 +7,7 @@ import {
   CheckCircle2, Flame, Shield, LogOut, CreditCard, Zap,
   Search, Filter, Phone, History, PlusCircle, Trash2, LayoutDashboard,
   Loader2, MessageSquare, Menu, X, Star, Sparkles, Tv, Eye, Heart, 
-  Image as ImageIcon, Film, Maximize2, Bitcoin, Bookmark, Bell, Monitor, Settings, PlayCircle
+  Image as ImageIcon, Film, Maximize2, Bitcoin, Bookmark, Bell, Monitor, Settings, PlayCircle, Check
 } from 'lucide-react';
 
 const OWNER_EMAIL = "kwinpat30@gmail.com"; 
@@ -188,7 +188,6 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 animate-in fade-in flex flex-col md:flex-row gap-8">
-      
       <div className="w-full md:w-64 shrink-0 space-y-2 flex md:flex-col overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 border-gray-800">
         <div className="hidden md:block mb-6 px-4">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#00F0FF] to-blue-600 flex items-center justify-center text-xl font-black text-white mb-3">
@@ -368,9 +367,11 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-// --- Admin Dashboard ---
+// --- Admin Dashboard (Updated with Creator Name & Featured Drop Toggle) ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
+  const [creatorName, setCreatorName] = useState('');
   const [title, setTitle] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
   const [sneakPeekPrice, setSneakPeekPrice] = useState('50');
   const [lifetimePrice, setLifetimePrice] = useState('150');
   const [globalPrice, setGlobalPrice] = useState('1500');
@@ -461,15 +462,17 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 
   const handleCreateVault = async (e) => {
     e.preventDefault();
-    if (!title || !imgUrl || mediaList.length === 0) {
-      setToastMsg("Provide a title, cover image, and at least one media item.");
+    if (!creatorName || !title || !imgUrl || mediaList.length === 0) {
+      setToastMsg("Provide a creator name, vault title, cover image, and media.");
       setTimeout(() => setToastMsg(''), 3000);
       return;
     }
     setLoading(true);
     try {
       const docRef = await addDoc(collection(db, "vaults"), {
+        creatorName: creatorName.trim(),
         title: title.trim(),
+        isFeatured: isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
@@ -478,11 +481,11 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         createdAt: new Date()
       });
       setVaults(prev => [...prev, { 
-        id: docRef.id, title, 
+        id: docRef.id, creatorName, title, isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) }, 
         mediaCount: `${mediaList.length} items`, img: imgUrl, mediaList, status: 'locked' 
       }]);
-      setTitle(''); setImgUrl(''); setMediaList([]);
+      setCreatorName(''); setTitle(''); setIsFeatured(false); setImgUrl(''); setMediaList([]);
       setToastMsg("New immersive vault published successfully!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
@@ -513,7 +516,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             <LayoutDashboard className="text-[#00F0FF]" /> Admin Control Center
           </h1>
-          <p className="text-gray-400 text-xs mt-1">Publish vaults with tiered pricing & mixed media.</p>
+          <p className="text-gray-400 text-xs mt-1">Publish vaults with creator names, tiered pricing & mixed media.</p>
         </div>
         <button onClick={() => setActiveTab('home')} className="text-xs bg-gray-900 border border-gray-800 hover:text-white px-4 py-2 rounded-xl text-gray-300 font-bold">
           View Live Site →
@@ -527,9 +530,22 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           </h3>
 
           <form onSubmit={handleCreateVault} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Vault / Creator Title</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="E.G. Nairobi Nightclub VIP Set" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]" />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Creator Name</label>
+                <input type="text" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} placeholder="E.G. Nairobi Vixen" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Vault Title</label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="E.G. Rooftop VIP Set" className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#00F0FF]" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-black/40 border border-gray-800 p-3 rounded-xl">
+              <input type="checkbox" id="featuredToggle" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer" />
+              <label htmlFor="featuredToggle" className="text-xs text-gray-300 font-bold cursor-pointer select-none">
+                🌟 Feature this vault as the Homepage Hero Drop
+              </label>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -601,7 +617,8 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
             <thead className="border-b border-gray-800 text-gray-500 uppercase text-[10px]">
               <tr>
                 <th className="pb-3">Thumbnail</th>
-                <th className="pb-3">Title</th>
+                <th className="pb-3">Creator / Title</th>
+                <th className="pb-3">Featured</th>
                 <th className="pb-3">Items</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
@@ -610,7 +627,13 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               {vaults.map((vault) => (
                 <tr key={vault.id} className="hover:bg-black/30">
                   <td className="py-3"><img src={vault.img} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" /></td>
-                  <td className="py-3 font-bold text-white">{vault.title}</td>
+                  <td className="py-3">
+                    <div className="font-bold text-white">{vault.creatorName || 'Creator'}</div>
+                    <div className="text-[10px] text-gray-400">{vault.title}</div>
+                  </td>
+                  <td className="py-3">
+                    {vault.isFeatured ? <span className="bg-[#FFD700]/20 text-[#FFD700] text-[10px] px-2 py-0.5 rounded font-bold">Featured</span> : <span className="text-gray-500 text-[10px]">Standard</span>}
+                  </td>
                   <td className="py-3 text-gray-400 font-mono">{vault.mediaList?.length || 1} items</td>
                   <td className="py-3 text-right space-x-2">
                     <button onClick={() => { setSelectedVaultId(vault.id); setActiveTab('vip'); }} className="text-[#00F0FF] hover:underline px-2 py-1 font-bold">View</button>
@@ -626,32 +649,32 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   );
 };
 
-// --- Home Layout / Tab Sorting Logic ---
+// --- Home Layout / Tab Sorting Logic with Dynamic Featured Hero ---
 const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
-  // Sorting or filtering logic based on activeTab
   let displayedVaults = [...vaults];
 
   if (activeTab === 'latest') {
-    displayedVaults.sort((a, b) => {
-      const timeA = a.createdAt?.seconds || 0;
-      const timeB = b.createdAt?.seconds || 0;
-      return timeB - timeA;
-    });
+    displayedVaults.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   } else if (activeTab === 'trending' || activeTab === 'popular') {
-    // Reverse order or simulated sorting for trending/popular
     displayedVaults.reverse();
   }
 
+  // Find the featured vault for the hero banner, fallback to first vault
+  const featuredDrop = vaults.find(v => v.isFeatured) || vaults[0];
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      {activeTab === 'home' && (
-        <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" onClick={() => setActiveTab('membership')}>
+      {activeTab === 'home' && featuredDrop && (
+        <div 
+          className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" 
+          onClick={() => { setSelectedVaultId(featuredDrop.id); setSelectedCreator(featuredDrop); setActiveTab('vip'); }}
+        >
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C10] via-black/40 to-transparent z-10"></div>
-          <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+          <img src={featuredDrop.img} alt="Hero" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           <div className="absolute bottom-6 left-6 z-20 space-y-2">
             <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/50 px-3 py-1 rounded text-[10px] uppercase font-bold tracking-wider inline-block">Featured Drop</span>
-            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">The Ultimate Superhighway Premium Experience</h2>
-            <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased weekend sets, live streams, and high-definition creator archives.</p>
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-md">{featuredDrop.creatorName ? `${featuredDrop.creatorName} — ` : ''}{featuredDrop.title}</h2>
+            <p className="text-gray-300 text-xs md:text-sm max-w-xl line-clamp-2">Get unrestricted access to unreleased private sets, live streams, and high-definition creator archives.</p>
           </div>
         </div>
       )}
@@ -675,7 +698,8 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
                 <img src={vault.img} alt={vault.title} className="w-full h-full object-cover blur-[1px] opacity-70 group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 flex gap-1">
+                  {vault.isFeatured && <span className="bg-[#FFD700] text-black text-[9px] font-black px-1.5 py-0.5 rounded">FEATURED</span>}
                   <span className="bg-black/60 backdrop-blur-md text-[10px] font-bold px-2 py-0.5 rounded text-gray-300 border border-gray-700">
                     {vault.mediaList?.length || 1} items
                   </span>
@@ -688,6 +712,7 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
                 </div>
 
                 <div className="absolute bottom-3 left-3 right-3">
+                  <div className="text-[10px] text-[#00F0FF] font-bold uppercase tracking-wider">{vault.creatorName || 'Verified Creator'}</div>
                   <h4 className="text-white font-bold text-sm leading-tight line-clamp-1">{vault.title}</h4>
                   <div className="text-[10px] text-[#FFD700] font-mono mt-0.5">From KES {pricing.sneakPeek}</div>
                 </div>
@@ -700,7 +725,7 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
   );
 };
 
-// --- Creator Directory Layout (NEW) ---
+// --- Creator Directory Layout ---
 const CreatorDirectoryLayout = ({ vaults, setSelectedVaultId, setSelectedCreator, setActiveTab }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6 animate-in fade-in">
@@ -722,7 +747,7 @@ const CreatorDirectoryLayout = ({ vaults, setSelectedVaultId, setSelectedCreator
               <img src={vault.img} alt={vault.title} className="w-full h-full object-cover" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm truncate">{vault.title}</h3>
+              <h3 className="text-white font-bold text-sm truncate">{vault.creatorName || vault.title}</h3>
               <p className="text-[10px] text-gray-400 mt-1 font-mono">{vault.mediaList?.length || 1} Media Items</p>
             </div>
             <button className="w-full bg-gray-900 border border-gray-800 group-hover:bg-[#00F0FF] group-hover:text-black group-hover:border-[#00F0FF] text-[#00F0FF] font-bold py-2 rounded-xl text-xs transition-colors">
@@ -769,7 +794,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      
       <div className="relative rounded-2xl overflow-hidden bg-gray-900 border border-gray-800 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-[0_0_30px_rgba(0,240,255,0.1)]">
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
         <img src={activeVault?.img || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop"} alt="" className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 z-0" />
@@ -781,7 +805,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
         <div className="relative z-20 text-center md:text-left space-y-2 flex-1">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
             <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-              {isUnlocked ? 'Unlocked Access' : 'Exclusive Vault'}
+              {isUnlocked ? 'Unlocked Access' : (activeVault?.creatorName || 'Exclusive Creator')}
             </span>
             <span className="bg-black/60 text-gray-300 border border-gray-700 text-[10px] font-bold px-3 py-1 rounded-full font-mono">
               {mediaList.length} Items Included
@@ -870,7 +894,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
               <div className="w-16 h-16 bg-[#FFD700]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
                 <Lock className="text-[#FFD700]" size={28} />
               </div>
-              <h3 className="text-white font-bold mb-1 text-lg">Subscribe to see {activeVault?.title || 'content'}</h3>
+              <h3 className="text-white font-bold mb-1 text-lg">Subscribe to see {activeVault?.creatorName || activeVault?.title || 'content'}</h3>
               <p className="text-gray-400 text-xs mb-6">{mediaList.length} media items unlock when you subscribe</p>
               <button onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
                 <Lock size={14} className="inline mr-2 -mt-1"/> Subscribe (From KES {pricing.sneakPeek})
@@ -885,7 +909,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                 <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-800/80">
                   <h3 className="text-white font-bold flex items-center gap-2 text-sm">
                     {checkoutStep === 1 ? <Lock size={16} className="text-[#FFD700]"/> : <button onClick={()=>setCheckoutStep(1)} className="text-gray-400 hover:text-white">←</button>}
-                    {checkoutStep === 1 ? `Subscribe to ${activeVault?.title || 'Vault'}` : 'Paying with M-Pesa'}
+                    {checkoutStep === 1 ? `Subscribe to ${activeVault?.creatorName || 'Vault'}` : 'Paying with M-Pesa'}
                   </h3>
                   <button onClick={()=>setCheckoutStep(0)} className="text-gray-400 hover:text-white p-1 bg-gray-900 rounded-full"><X size={18}/></button>
                 </div>
@@ -1003,7 +1027,7 @@ const CreatorProfileLayout = ({ selectedCreator, currentUser, setActiveTab, setS
         await addDoc(collection(db, "follows"), {
           userId: currentUser.uid,
           creatorId: selectedCreator.id,
-          title: selectedCreator.title,
+          title: selectedCreator.creatorName || selectedCreator.title,
           img: selectedCreator.img,
           createdAt: new Date()
         });
@@ -1032,7 +1056,7 @@ const CreatorProfileLayout = ({ selectedCreator, currentUser, setActiveTab, setS
             <span className="bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Verified Creator</span>
             <span className="text-xs text-gray-400 font-mono">{selectedCreator.mediaList?.length || 1} Media Items</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-white">{selectedCreator.title}</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-white">{selectedCreator.creatorName || selectedCreator.title}</h1>
           <p className="text-gray-300 text-xs max-w-lg leading-relaxed">Exclusive performer and content creator. Subscribe to unlock full archive streams, weekend drops, and private clips.</p>
           
           <div className="pt-2 flex justify-center md:justify-start gap-3">
