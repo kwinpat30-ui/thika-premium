@@ -702,10 +702,15 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
             return (
       <CreatorFeedCard 
         key={vault.id} 
-        vault={vault}
+        vault={{
+          ...vault,
+          coverUrl: vault.img, 
+          videoCount: (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video').length,
+          photoCount: (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image').length
+        }}
         creator={{
-          name: vault.creator || vault.creatorName || "Verified Creator",
-          avatarUrl: vault.creatorAvatar || vault.avatarUrl || "https://via.placeholder.com/150",
+          name: vault.creatorName || "Verified Creator",
+          avatarUrl: vault.img || "https://via.placeholder.com/150",
           verified: true
         }}
         onUnlock={() => {
