@@ -50,7 +50,7 @@ export default async (req, context) => {
     // Check for success event
     if (payload.event === 'payment.success' || payload.Status === 'Success' || payload.status === 'success' || payload.ResultCode === 0) {
       const phone = payload.Msisdn || payload.phone || payload.msisdn || payload.PhoneNumber;
-      const amount = payload.Amount || payload.amount || 50;
+      const amount = Number(payload.Amount || payload.amount || 40);
       const mpesaCode = payload.MpesaReceiptNumber || payload.mpesaCode || payload.receipt || payload.ReceiptNumber;
       
       // Look for the vault ID across multiple possible payload fields sent by HashPay
@@ -75,10 +75,22 @@ export default async (req, context) => {
         }
       }
 
+      // Calculate expiration duration based on exact amount paid
+      let durationMs = 5 * 60 * 1000; // Default 5 mins for Sneak Peek (KES 40)
+      if (amount === 100) {
+        durationMs = 24 * 60 * 60 * 1000;       // 24 hours (KES 100)
+      } else if (amount === 450) {
+        durationMs = 7 * 24 * 60 * 60 * 1000;   // Weekly (KES 450)
+      } else if (amount === 800) {
+        durationMs = 30 * 24 * 60 * 60 * 1000;  // Monthly (KES 800)
+      }
+
+      const expiresAt = new Date(Date.now() + durationMs).toISOString();
+
       // 1. Save the transaction to Firestore billing ledger
       await db.collection('transactions').add({
         phone: phone || 'Unknown',
-        amount: Number(amount),
+        amount: amount,
         mpesaCode: mpesaCode || 'TEST_RECEIPT',
         vaultId: targetVaultId || 'Unknown',
         createdAt: FieldValue.serverTimestamp()
@@ -87,13 +99,14 @@ export default async (req, context) => {
       if (!targetVaultId) {
         console.error("No valid vault ID could be determined.");
       } else {
-        // 2. Automatically unlock the specific Firestore vault document!
+        // 2. Automatically unlock the specific Firestore vault document and set expiration!
         await db.collection('vaults').doc(targetVaultId).update({
           status: 'unlocked',
           paidBy: phone || 'Customer',
-          unlockTime: FieldValue.serverTimestamp()
+          unlockTime: FieldValue.serverTimestamp(),
+          expiresAt: expiresAt
         });
-        console.log(`Successfully auto-unlocked vault: ${targetVaultId}`);
+        console.log(`Successfully auto-unlocked vault: ${targetVaultId} with expiration: ${expiresAt}`);
       }
     }
 
