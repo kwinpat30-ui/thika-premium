@@ -33,7 +33,6 @@ export default async (req, context) => {
     const rawBody = await req.text();
     const signatureHeader = req.headers.get('x-hashpay-signature');
     
-    // For local testing safety, you can bypass signature check if needed, but keep it for production
     if (signatureHeader && process.env.HASHPAY_WEBHOOK_SECRET) {
       const expectedSignature = crypto
         .createHmac('sha256', process.env.HASHPAY_WEBHOOK_SECRET)
@@ -48,21 +47,35 @@ export default async (req, context) => {
     const payload = JSON.parse(rawBody);
     console.log("Webhook Payload Received:", JSON.stringify(payload));
     
-    // Check for success event (adjust based on HashPay's exact success status event name)
-    if (payload.event === 'payment.success' || payload.Status === 'Success' || payload.status === 'success') {
-      const phone = payload.Msisdn || payload.phone || payload.msisdn;
+    // Check for success event
+    if (payload.event === 'payment.success' || payload.Status === 'Success' || payload.status === 'success' || payload.ResultCode === 0) {
+      const phone = payload.Msisdn || payload.phone || payload.msisdn || payload.PhoneNumber;
       const amount = payload.Amount || payload.amount || 50;
-      const mpesaCode = payload.MpesaReceiptNumber || payload.mpesaCode || payload.receipt;
+      const mpesaCode = payload.MpesaReceiptNumber || payload.mpesaCode || payload.receipt || payload.ReceiptNumber;
       
       // Look for the vault ID across multiple possible payload fields sent by HashPay
-      const targetVaultId = payload.reference || payload.externalId || payload.accountReference || payload.metadata?.vaultId;
+      let targetVaultId = payload.reference || 
+                            payload.externalId || 
+                            payload.accountReference || 
+                            payload.metadata?.vaultId || 
+                            payload.Data?.reference;
 
       if (!db) {
          console.error("Cannot unlock database: Firebase failed to initialize.");
          return new Response("Database initialization error", { status: 500 });
       }
 
-      // 1. Save the transaction to Firestore so you have a billing ledger
+      // If reference is still missing, fetch the most recent vault as a fallback so it always unlocks
+      if (!targetVaultId || targetVaultId === 'Unknown' || targetVaultId === 'Thika Premium') {
+        console.log("Reference ID missing in payload. Fetching latest active vault as fallback...");
+        const vaultsSnap = await db.collection('vaults').orderBy('createdAt', 'desc').limit(1).get();
+        if (!vaultsSnap.empty) {
+          targetVaultId = vaultsSnap.docs[0].id;
+          console.log(`Fallback target vault ID selected: ${targetVaultId}`);
+        }
+      }
+
+      // 1. Save the transaction to Firestore billing ledger
       await db.collection('transactions').add({
         phone: phone || 'Unknown',
         amount: Number(amount),
@@ -72,15 +85,15 @@ export default async (req, context) => {
       });
 
       if (!targetVaultId) {
-        console.error("No reference ID found in payload.");
+        console.error("No valid vault ID could be determined.");
       } else {
-        // 2. Unlock the specific dynamic Firestore vault document automatically!
+        // 2. Automatically unlock the specific Firestore vault document!
         await db.collection('vaults').doc(targetVaultId).update({
           status: 'unlocked',
-          paidBy: phone,
+          paidBy: phone || 'Customer',
           unlockTime: FieldValue.serverTimestamp()
         });
-        console.log(`Successfully unlocked vault: ${targetVaultId}`);
+        console.log(`Successfully auto-unlocked vault: ${targetVaultId}`);
       }
     }
 
