@@ -167,7 +167,7 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
 };
 
 // --- Live Expiry Countdown Warning Banner ---
-const ExpiryWarningBanner = ({ expiresAt, onExpire }) => {
+const ExpiryWarningBanner = ({ expiresAt, onExpire, onRenewClick }) => {
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
@@ -181,7 +181,7 @@ const ExpiryWarningBanner = ({ expiresAt, onExpire }) => {
       if (difference <= 0) {
         clearInterval(interval);
         setTimeLeft(0);
-        if (onExpire) onExpire();
+        if (onExpire) onExpire(); // Instantly triggers vault lock state
       } else {
         setTimeLeft(difference);
       }
@@ -219,7 +219,7 @@ const ExpiryWarningBanner = ({ expiresAt, onExpire }) => {
     }}>
       <span>⚠️ Your access pass expires in {minutes}m {seconds < 10 ? `0${seconds}` : seconds}s!</span>
       <button 
-        onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+        onClick={onRenewClick}
         style={{
           background: '#000',
           color: '#fff',
@@ -891,7 +891,7 @@ const CreatorDirectoryLayout = ({ vaults, setSelectedVaultId, setSelectedCreator
 };
 
 // --- VIP Layout ---
-const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab, setToastMsg }) => {
+const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhone, handlePayment, setActiveTab, setToastMsg }) => {
   const [position, setPosition] = useState({ top: '15%', left: '15%' });
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [activeModalItem, setActiveModalItem] = useState(null); 
@@ -950,7 +950,15 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
 
       {isUnlocked ? (
         <div className="space-y-6">
-          <ExpiryWarningBanner expiresAt={activeVault?.expiresAt} onExpire={() => {}} />
+          <ExpiryWarningBanner 
+            expiresAt={activeVault?.expiresAt} 
+            onExpire={() => {
+              setActiveVault(prev => ({ ...prev, status: 'locked' }));
+            }} 
+            onRenewClick={() => {
+              setCheckoutStep(1);
+            }}
+          />
 
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
             <Sparkles size={16} className="text-[#FFD700]" /> Unlocked Media Gallery
@@ -1746,7 +1754,7 @@ export default function App() {
           )}
           {activeTab === 'account' && <AccountLayout currentUser={currentUser} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handleLogout={handleLogout} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} setToastMsg={setToastMsg} />}
           {activeTab === 'profile' && <CreatorProfileLayout selectedCreator={selectedCreator} currentUser={currentUser} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} setToastMsg={setToastMsg} />}
-          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
+          {activeTab === 'vip' && <VIPLayout activeVault={activeVault} setActiveVault={setActiveVault} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} handlePayment={handlePayment} setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
           {activeTab === 'admin' && isOwner && <AdminLayout vaults={vaults} setVaults={setVaults} setToastMsg={setToastMsg} setActiveTab={setActiveTab} setSelectedVaultId={setSelectedVaultId} />}
           {activeTab === 'membership' && <MembershipLayout setActiveTab={setActiveTab} currentUser={currentUser} />}
           {activeTab === 'restore' && <RestoreLayout setActiveTab={setActiveTab} setToastMsg={setToastMsg} />}
