@@ -1,13 +1,13 @@
 import React from 'react';
 
-export default function CreatorFeedCard({ creator, vault, onUnlock }) {
+export default function CreatorFeedCard({ creator, vault, onUnlock, buttonText }) {
   return (
-    <div className="bg-[#12161F] border border-gray-800 rounded-xl overflow-hidden shadow-xl mb-6 transition-all duration-300 hover:border-yellow-500/50">
+    <div className="bg-[#12161F] border border-gray-800 rounded-xl overflow-hidden shadow-xl mb-6 transition-all duration-300 hover:border-[#00F0FF]/50">
       
       {/* Top: Immersive Media-First Hook (16:9 Cover Thumbnail) */}
       <div className="relative w-full aspect-video overflow-hidden bg-black">
         <img 
-          src={vault.coverImage || vault.thumbnail} 
+          src={vault.img || vault.coverImage || vault.thumbnail} 
           alt={vault.title}
           className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
         />
@@ -20,26 +20,26 @@ export default function CreatorFeedCard({ creator, vault, onUnlock }) {
           <img 
             src={creator?.avatarUrl || "https://via.placeholder.com/150"} 
             alt={creator?.name || "Creator"}
-            className="w-10 h-10 rounded-full border-2 border-yellow-400 object-cover shadow-md"
+            className="w-10 h-10 rounded-full border-2 border-[#00F0FF] object-cover shadow-md"
           />
           <div>
             <h4 className="text-white font-bold text-sm drop-shadow-md flex items-center gap-1">
               {creator?.name || "Verified Creator"}
-              <span className="text-blue-400 text-xs">✔</span>
+              <span className="text-[#00F0FF] text-xs">✔</span>
             </h4>
-            <span className="text-gray-300 text-xs drop-shadow-md">
-              {vault.secureVideosCount || 0} Videos • {vault.photosCount || 0} Photos
+            <span className="text-gray-300 text-xs drop-shadow-md font-mono">
+              {vault.videoCount || 0} Videos • {vault.photoCount || 0} Photos
             </span>
           </div>
         </div>
 
         {/* Top-Right Badge */}
-        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-yellow-500/30 px-3 py-1 rounded-full text-yellow-400 text-xs font-semibold tracking-wide">
+        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-[#FFD700]/30 px-3 py-1 rounded-full text-[#FFD700] text-xs font-semibold tracking-wide">
           PREMIUM VAULT
         </div>
       </div>
 
-      {/* Bottom: Vault Info & Instant M-Pesa Pricing Action Bar */}
+      {/* Bottom: Vault Info & Instant Action Bar */}
       <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-white font-semibold text-base mb-1">{vault.title}</h3>
@@ -49,12 +49,9 @@ export default function CreatorFeedCard({ creator, vault, onUnlock }) {
         {/* Direct Checkout CTA */}
         <button 
           onClick={() => onUnlock && onUnlock(vault)}
-          className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-300 text-gray-950 font-bold px-5 py-2.5 rounded-lg text-sm shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full sm:w-auto bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-2.5 rounded-xl text-sm shadow-[0_0_15px_rgba(255,215,0,0.2)] transition-all flex items-center justify-center cursor-pointer"
         >
-          <span>Unlock Access</span>
-          <span className="bg-gray-950/10 px-2 py-0.5 rounded text-xs">
-            KES {vault.price || "150"}
-          </span>
+          {buttonText || "Subscribe"}
         </button>
       </div>
     </div>
