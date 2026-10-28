@@ -700,34 +700,34 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
           {displayedVaults.map((vault) => {
             const pricing = vault.pricing || { sneakPeek: vault.price || 50, lifetime: 150, global: 1500 };
             return (
-      <CreatorFeedCard 
-        key={vault.id} 
-        vault={{
-          ...vault,
-          coverUrl: vault.img,
-          image: vault.img,
-          thumbnail: vault.img,
-          img: vault.img,
-          videoCount: (vault.medialist || vault.mediaList || []).length > 0 
-            ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video' || m.mediaType === 'video' || !m.type).length 
-            : 1,
-          photoCount: (vault.medialist || vault.mediaList || []).length > 0 
-            ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image' || m.mediaType === 'image').length 
-            : 1
-        }}
-        creator={{
-          name: vault.creatorName || "Verified Creator",
-          avatarUrl: vault.img || "https://via.placeholder.com/150",
-          verified: true
-        }}
-        onUnlock={() => {
-          setSelectedVaultId(vault.id); 
-          setSelectedCreator(vault); 
-          setActiveTab('vip');
-        }}
-      />
-    
-    );
+              <CreatorFeedCard 
+                key={vault.id} 
+                vault={{
+                  ...vault,
+                  coverUrl: vault.img,
+                  image: vault.img,
+                  thumbnail: vault.img,
+                  img: vault.img,
+                  videoCount: (vault.medialist || vault.mediaList || []).length > 0 
+                    ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video' || m.mediaType === 'video' || !m.type).length 
+                    : 1,
+                  photoCount: (vault.medialist || vault.mediaList || []).length > 0 
+                    ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image' || m.mediaType === 'image').length 
+                    : 1
+                }}
+                creator={{
+                  name: vault.creatorName || "Verified Creator",
+                  avatarUrl: vault.creatorAvatar || vault.avatarUrl || vault.img || "https://via.placeholder.com/150",
+                  verified: true
+                }}
+                buttonText="Subscribe"
+                onUnlock={() => {
+                  setSelectedVaultId(vault.id); 
+                  setSelectedCreator(vault); 
+                  setActiveTab('vip');
+                }}
+              />
+            );
           })}
         </div>
       </div>
@@ -898,19 +898,38 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
           )}
         </div>
       ) : (
-        <>
-          {checkoutStep === 0 && (
-            <div className="bg-[#12151c] rounded-2xl border border-gray-800 p-8 text-center max-w-sm mx-auto mt-6 shadow-2xl animate-in fade-in">
-              <div className="w-16 h-16 bg-[#FFD700]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
-                <Lock className="text-[#FFD700]" size={28} />
-              </div>
-              <h3 className="text-white font-bold mb-1 text-lg">Subscribe to see {activeVault?.creatorName || activeVault?.title || 'content'}</h3>
-              <p className="text-gray-400 text-xs mb-6">{mediaList.length} media items unlock when you subscribe</p>
-              <button onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
-                <Lock size={14} className="inline mr-2 -mt-1"/> Subscribe (From KES {pricing.sneakPeek})
-              </button>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center bg-[#12151c] border border-gray-800 p-6 rounded-2xl gap-4 shadow-xl">
+            <div>
+              <h3 className="text-white font-black text-lg">Exclusive Media Vault Preview</h3>
+              <p className="text-gray-400 text-xs mt-1">
+                {mediaList.length} Items Available (Photos & Videos) • Subscribe to unlock full HD access
+              </p>
             </div>
-          )}
+            <button 
+              onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek); }} 
+              className="w-full sm:w-auto bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+            >
+              Subscribe (From KES {pricing.sneakPeek})
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {mediaList.map((item, idx) => (
+              <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 group shadow-lg">
+                <img 
+                  src={item.thumb || activeVault?.img} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover filter blur-[6px] scale-105 transition-transform duration-300 group-hover:scale-110" 
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-800 flex items-center gap-1">
+                    <Lock size={12}/> Locked Preview
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
 
           {checkoutStep > 0 && (
             <div className="fixed inset-0 z-[130] bg-black/80 backdrop-blur-sm flex flex-col justify-end sm:justify-center items-center sm:p-4">
@@ -984,7 +1003,7 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
