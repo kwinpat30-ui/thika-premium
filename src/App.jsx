@@ -166,6 +166,77 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
   );
 };
 
+// --- Live Expiry Countdown Warning Banner ---
+const ExpiryWarningBanner = ({ expiresAt, onExpire }) => {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const expiryTime = new Date(expiresAt).getTime();
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const difference = expiryTime - now;
+
+      if (difference <= 0) {
+        clearInterval(interval);
+        setTimeLeft(0);
+        if (onExpire) onExpire();
+      } else {
+        setTimeLeft(difference);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiresAt, onExpire]);
+
+  if (timeLeft === null || timeLeft <= 0) return null;
+
+  const totalSeconds = Math.floor(timeLeft / 1000);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (totalSeconds > 300) return null; // Shows warning when 5 mins or less remain
+
+  return (
+    <div style={{
+      backgroundColor: '#f59e0b',
+      color: '#000',
+      padding: '12px 20px',
+      textAlign: 'center',
+      fontWeight: 'bold',
+      fontSize: '14px',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '15px',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+      borderRadius: '12px',
+      marginBottom: '1rem'
+    }}>
+      <span>⚠️ Your access pass expires in {minutes}m {seconds < 10 ? `0${seconds}` : seconds}s!</span>
+      <button 
+        onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+        style={{
+          background: '#000',
+          color: '#fff',
+          border: 'none',
+          padding: '6px 14px',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        }}
+      >
+        Renew Now
+      </button>
+    </div>
+  );
+};
+
 // --- User Account Dashboard ---
 const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLogout, setActiveTab, setSelectedVaultId, setSelectedCreator, setToastMsg }) => {
   const [subTab, setSubTab] = useState('subscriptions');
@@ -381,9 +452,10 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [title, setTitle] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
-  const [sneakPeekPrice, setSneakPeekPrice] = useState('50');
-  const [lifetimePrice, setLifetimePrice] = useState('150');
-  const [globalPrice, setGlobalPrice] = useState('1500');
+  const [sneakPeekPrice, setSneakPeekPrice] = useState('40');
+  const [dailyPrice, setDailyPrice] = useState('100');
+  const [weeklyPrice, setWeeklyPrice] = useState('450');
+  const [monthlyPrice, setMonthlyPrice] = useState('800');
   const [imgUrl, setImgUrl] = useState('');
   const [mediaList, setMediaList] = useState([]); 
   const [loading, setLoading] = useState(false);
@@ -505,7 +577,12 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         creatorAvatar: avatarUrl || imgUrl.trim(),
         title: title.trim(),
         isFeatured: isFeatured,
-        pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
+        pricing: { 
+          sneakPeek: Number(sneakPeekPrice), 
+          daily: Number(dailyPrice), 
+          weekly: Number(weeklyPrice), 
+          monthly: Number(monthlyPrice) 
+        },
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
         medialist: mediaList,
@@ -514,7 +591,12 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       });
       setVaults(prev => [...prev, {
         id: docRef.id, creatorName, creatorAvatar: avatarUrl || imgUrl, title: title, isFeatured,
-        pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
+        pricing: { 
+          sneakPeek: Number(sneakPeekPrice), 
+          daily: Number(dailyPrice), 
+          weekly: Number(weeklyPrice), 
+          monthly: Number(monthlyPrice) 
+        },
         mediaCount: `${mediaList.length} items`, img: imgUrl, medialist: mediaList, status: 'locked'
       }]);
       setCreatorName('');
@@ -585,18 +667,22 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               </label>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Sneak Peek (KES)</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Sneak Peek (KES 40 / 5m)</label>
                 <input type="number" value={sneakPeekPrice} onChange={(e) => setSneakPeekPrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Lifetime (KES)</label>
-                <input type="number" value={lifetimePrice} onChange={(e) => setLifetimePrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">24 Hours (KES 100)</label>
+                <input type="number" value={dailyPrice} onChange={(e) => setDailyPrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Global Pass (KES)</label>
-                <input type="number" value={globalPrice} onChange={(e) => setGlobalPrice(e.target.value)} className="w-full bg-black text-[#00F0FF] font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#00F0FF]"/>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Weekly (KES 450)</label>
+                <input type="number" value={weeklyPrice} onChange={(e) => setWeeklyPrice(e.target.value)} className="w-full bg-black text-white font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#FFD700]"/>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Monthly (KES 800)</label>
+                <input type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="w-full bg-black text-[#00F0FF] font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#00F0FF]"/>
               </div>
             </div>
 
@@ -693,7 +779,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       </div>
     </div>
   );
-}; // <--- ADDED MISSING CLOSING BRACE
+};
 
 // --- Home Layout / Tab Sorting Logic with Dynamic Featured Hero ---
 const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
@@ -733,7 +819,6 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
 
         <div className="max-w-2xl mx-auto space-y-6">
           {displayedVaults.map((vault) => {
-            const pricing = vault.pricing || { sneakPeek: vault.price || 50, lifetime: 150, global: 1500 };
             return (
               <CreatorFeedCard 
                 key={vault.id} 
@@ -814,9 +899,8 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   const [selectedTierPrice, setSelectedTierPrice] = useState(0);
   
   const isUnlocked = activeVault?.status === 'unlocked';
-  // FIXED: Catches medialist vs mediaList spelling variations automatically
   const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
-  const pricing = activeVault?.pricing || { sneakPeek: activeVault?.price || 50, lifetime: 150, global: 1500 };
+  const pricing = activeVault?.pricing || { sneakPeek: 40, daily: 100, weekly: 450, monthly: 800 };
 
   useEffect(() => {
     const moveInterval = setInterval(() => {
@@ -866,6 +950,8 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
 
       {isUnlocked ? (
         <div className="space-y-6">
+          <ExpiryWarningBanner expiresAt={activeVault?.expiresAt} onExpire={() => {}} />
+
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
             <Sparkles size={16} className="text-[#FFD700]" /> Unlocked Media Gallery
           </h3>
@@ -877,7 +963,6 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                 onClick={() => setActiveModalItem(item)}
                 className="relative aspect-video rounded-xl overflow-hidden bg-black border border-gray-800 group cursor-pointer hover:border-[#00F0FF] transition-all shadow-lg"
               >
-                {/* DYNAMIC THUMBNAIL: Pulls Bunny.net video frame or Cloudinary image. Falls back to cover image if not found */}
                 <img 
                   src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
                   onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
@@ -954,17 +1039,16 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
               </p>
             </div>
             <button 
-              onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek); }} 
+              onClick={() => { setCheckoutStep(1); setSelectedTierPrice(pricing.sneakPeek || 40); }} 
               className="w-full sm:w-auto bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
             >
-              Subscribe (From KES {pricing.sneakPeek})
+              Subscribe (From KES {pricing.sneakPeek || 40})
             </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {mediaList.map((item, idx) => (
               <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 group shadow-lg">
-                {/* LOCKED DYNAMIC THUMBNAIL: Applies blur to actual video frames and photos */}
                 <img 
                   src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
                   onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
@@ -1019,21 +1103,22 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold mb-2">Select Access Tier</p>
+                    <p className="text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold mb-2">Select Access Plan</p>
                     
-                    <button onClick={()=>setSelectedTierPrice(pricing.sneakPeek)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.sneakPeek ? 'border-[#FFD700] bg-[#FFD700]/10 shadow-[0_0_10px_rgba(255,215,0,0.1)]' : 'border-gray-800 bg-black'}`}>
-                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Sneak Peek (24 hrs)</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.sneakPeek}</span></div>
+                    <button onClick={()=>setSelectedTierPrice(pricing.sneakPeek || 40)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === (pricing.sneakPeek || 40) ? 'border-[#FFD700] bg-[#FFD700]/10' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Sneak Peek (5 Mins)</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.sneakPeek || 40}</span></div>
                     </button>
                     
-                    <button onClick={()=>setSelectedTierPrice(pricing.lifetime)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.lifetime ? 'border-[#FFD700] bg-[#FFD700]/10 shadow-[0_0_10px_rgba(255,215,0,0.1)]' : 'border-gray-800 bg-black'}`}>
-                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Unlock Full Vault (Lifetime)</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.lifetime}</span></div>
+                    <button onClick={()=>setSelectedTierPrice(pricing.daily || 100)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === (pricing.daily || 100) ? 'border-[#FFD700] bg-[#FFD700]/10' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">24 Hours Pass</span><span className="text-[#FFD700] font-bold text-sm">KES {pricing.daily || 100}</span></div>
                     </button>
                     
-                    <button onClick={()=>setSelectedTierPrice(pricing.global)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === pricing.global ? 'border-[#00F0FF] bg-[#00F0FF]/10 shadow-[0_0_10px_rgba(0,240,255,0.1)]' : 'border-gray-800 bg-black'}`}>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-white font-bold">Global All-Access (Monthly)</span>
-                        <span className="text-[#00F0FF] font-bold text-sm">KES {pricing.global}</span>
-                      </div>
+                    <button onClick={()=>setSelectedTierPrice(pricing.weekly || 450)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === (pricing.weekly || 450) ? 'border-[#00F0FF] bg-[#00F0FF]/10' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Weekly Pass (7 Days)</span><span className="text-[#00F0FF] font-bold text-sm">KES {pricing.weekly || 450}</span></div>
+                    </button>
+
+                    <button onClick={()=>setSelectedTierPrice(pricing.monthly || 800)} className={`w-full text-left p-3.5 rounded-xl border transition-all ${selectedTierPrice === (pricing.monthly || 800) ? 'border-[#00F0FF] bg-[#00F0FF]/10' : 'border-gray-800 bg-black'}`}>
+                      <div className="flex justify-between items-center"><span className="text-sm text-white font-bold">Monthly Pass (30 Days)</span><span className="text-[#00F0FF] font-bold text-sm">KES {pricing.monthly || 800}</span></div>
                     </button>
 
                     <div className="pt-3 pb-1 border-t border-gray-800/80 mt-2">
@@ -1044,8 +1129,8 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                       </div>
                     </div>
 
-                    <button onClick={() => { setCheckoutStep(0); handlePayment('Selected Tier', selectedTierPrice || pricing.sneakPeek); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl mt-2 transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
-                      Pay KES {selectedTierPrice || pricing.sneakPeek} Now
+                    <button onClick={() => { setCheckoutStep(0); handlePayment('Selected Tier', selectedTierPrice || pricing.sneakPeek || 40); }} className="w-full bg-[#FFD700] hover:bg-[#e6c200] text-black font-black py-4 rounded-xl mt-2 transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]">
+                      Pay KES {selectedTierPrice || pricing.sneakPeek || 40} Now
                     </button>
                   </div>
                 )}
@@ -1081,7 +1166,7 @@ const CreatorProfileLayout = ({ selectedCreator, currentUser, setActiveTab, setS
     );
   }
 
-  const pricing = selectedCreator.pricing || { sneakPeek: selectedCreator.price || 50 };
+  const pricing = selectedCreator.pricing || { sneakPeek: 40 };
 
   const handleToggleFollow = async () => {
     if (!currentUser) {
@@ -1142,7 +1227,7 @@ const CreatorProfileLayout = ({ selectedCreator, currentUser, setActiveTab, setS
               <Heart size={14} className={isFollowing ? 'fill-[#00F0FF]' : ''}/> {isFollowing ? 'Following' : 'Follow'}
             </button>
             <button onClick={() => { setSelectedVaultId(selectedCreator.id); setActiveTab('vip'); }} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-6 py-3 rounded-xl text-xs transition-all shadow-lg flex items-center gap-2">
-              <Lock size={14}/> Subscribe (KES {pricing.sneakPeek})
+              <Lock size={14}/> Subscribe (KES {pricing.sneakPeek || 40})
             </button>
           </div>
         </div>
