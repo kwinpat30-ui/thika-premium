@@ -150,24 +150,108 @@ const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen, currentUser }
   );
 };
 
+// --- Notification Bell Component ---
+const NotificationBell = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(10));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotifications(list);
+      const unread = list.filter(n => !n.read).length;
+      setUnreadCount(unread);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleOpenDropdown = async () => {
+    setIsOpen(!isOpen);
+    if (!isOpen && unreadCount > 0) {
+      setUnreadCount(0);
+      // Mark notifications as read in local/session or state
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button 
+        onClick={handleOpenDropdown}
+        className="relative p-2 rounded-full bg-gray-900 border border-gray-800 text-gray-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/40 transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-black font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-3 w-80 bg-[#12151c] border border-gray-800 rounded-2xl shadow-2xl z-[250] p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-800">
+            <h4 className="text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <Bell size={14} className="text-[#00F0FF]" /> Creator Notifications
+            </h4>
+            <span className="text-[10px] text-gray-400">{notifications.length} alerts</span>
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-none">
+            {notifications.length === 0 ? (
+              <p className="text-center text-gray-500 text-xs py-6">No recent notifications</p>
+            ) : (
+              notifications.map((item) => (
+                <div key={item.id} className="p-2.5 rounded-xl bg-black/40 border border-gray-800/80 hover:border-[#00F0FF]/40 transition-colors text-xs space-y-1">
+                  <p className="text-white font-bold">{item.title || "New Vault Drop!"}</p>
+                  <p className="text-[11px] text-gray-400">{item.message}</p>
+                  <span className="text-[9px] text-[#00F0FF] block pt-1">{new Date(item.createdAt?.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- Top Navigation Bar ---
 const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner, setIsMobileMenuOpen }) => {
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-300 hover:text-white p-1">
-            <Menu size={24} />
+            <Menu size={22} />
           </button>
           <div onClick={() => setActiveTab('home')}><Logo /></div>
         </div>
 
+        {/* Desktop Search Bar */}
         <div className="hidden md:flex relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos, creators, tags..." className="w-full bg-[#12151c] text-white text-xs border border-gray-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors" />
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Right Action Icons & Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Mobile Search Toggle Button */}
+          <button 
+            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} 
+            className="md:hidden p-2 rounded-full bg-gray-900 border border-gray-800 text-gray-300 hover:text-[#00F0FF]"
+            aria-label="Search"
+          >
+            <Search size={18} />
+          </button>
+
+          {/* Live Notification Bell */}
+          <NotificationBell />
+
           {currentUser ? (
             <div className="hidden md:flex items-center gap-2">
               {isOwner && (
@@ -182,11 +266,29 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           ) : (
             <button onClick={() => setActiveTab('login')} className="text-xs text-[#00F0FF] hover:underline hidden sm:block font-bold">Log in</button>
           )}
-          <button onClick={() => setActiveTab('membership')} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5">
-            <Crown size={14} /> Subscribe
+
+          <button onClick={() => setActiveTab('membership')} className="bg-[#FFD700] hover:bg-[#e6c200] text-black font-black px-4 md:px-5 py-2 rounded-full text-xs transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] flex items-center gap-1.5 shrink-0">
+            <Crown size={14} /> <span className="hidden sm:inline">Subscribe</span>
           </button>
         </div>
       </div>
+
+      {/* Mobile Expandable Search Bar Overlay */}
+      {isMobileSearchOpen && (
+        <div className="md:hidden pt-3 pb-1 px-1 animate-in slide-in-from-top-2">
+          <div className="relative w-full">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input 
+              type="text" 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              placeholder="Search creators, videos, tags..." 
+              className="w-full bg-[#12151c] text-white text-xs border border-[#00F0FF]/50 rounded-full py-2.5 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF]" 
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
 
       <div className="max-w-6xl mx-auto flex overflow-x-auto gap-6 pt-3 pb-1 border-t border-gray-800/50 mt-3 text-xs font-bold scrollbar-none">
         {[
@@ -681,6 +783,15 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         status: 'active',
         createdAt: new Date()
       });
+
+      // Automatically push a notification for users
+      await addDoc(collection(db, "notifications"), {
+        title: `🔥 New Drop: ${creatorName.trim()}`,
+        message: `${title.trim()} is now live with ${mediaList.length} items!`,
+        createdAt: new Date(),
+        read: false
+      });
+
       setVaults(prev => [...prev, {
         id: docRef.id, creatorName, creatorAvatar: avatarUrl || imgUrl, title: title, isFeatured,
         pricing: { 
@@ -697,7 +808,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
       setIsFeatured(false);
       setImgUrl('');
       setMediaList([]);
-      setToastMsg("New immersive vault published successfully!");
+      setToastMsg("New immersive vault published & notification sent!");
       setTimeout(() => setToastMsg(''), 3000);
     } catch (error) {
       setToastMsg("Error publishing vault: " + error.message);
@@ -929,20 +1040,28 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 };
 
 // --- Home Layout / Tab Sorting Logic with Dynamic Featured Hero ---
-const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
+const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator, searchQuery }) => {
   let displayedVaults = [...vaults].filter(v => v.status !== 'archived');
 
-  if (activeTab === 'latest') {
-    displayedVaults.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  } else if (activeTab === 'trending' || activeTab === 'popular') {
-    displayedVaults.reverse();
+  if (searchQuery.trim()) {
+    const qLower = searchQuery.toLowerCase();
+    displayedVaults = displayedVaults.filter(v => 
+      (v.creatorName && v.creatorName.toLowerCase().includes(qLower)) ||
+      (v.title && v.title.toLowerCase().includes(qLower))
+    );
+  } else {
+    if (activeTab === 'latest') {
+      displayedVaults.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    } else if (activeTab === 'trending' || activeTab === 'popular') {
+      displayedVaults.reverse();
+    }
   }
 
   const featuredDrop = vaults.find(v => v.isFeatured && v.status !== 'archived') || displayedVaults[0];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
-      {activeTab === 'home' && featuredDrop && (
+      {!searchQuery && activeTab === 'home' && featuredDrop && (
         <div 
           className="relative h-64 md:h-80 rounded-2xl overflow-hidden shadow-[0_0_25px_rgba(0,240,255,0.15)] group cursor-pointer" 
           onClick={() => { setSelectedVaultId(featuredDrop.id); setSelectedCreator(featuredDrop); setActiveTab('vip'); }}
@@ -960,42 +1079,48 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-            <Flame size={16} className="text-[#FFD700]"/> {activeTab === 'latest' ? 'Latest Releases' : activeTab === 'trending' ? 'Trending Content' : activeTab === 'popular' ? 'Most Popular Vaults' : 'Exclusive Content Vaults'}
+            <Flame size={16} className="text-[#FFD700]"/> {searchQuery ? `Search Results for "${searchQuery}"` : activeTab === 'latest' ? 'Latest Releases' : activeTab === 'trending' ? 'Trending Content' : activeTab === 'popular' ? 'Most Popular Vaults' : 'Exclusive Content Vaults'}
           </h3>
         </div>
 
         <div className="max-w-2xl mx-auto space-y-6">
-          {displayedVaults.map((vault) => {
-            return (
-              <CreatorFeedCard 
-                key={vault.id} 
-                vault={{
-                  ...vault,
-                  coverUrl: vault.img,
-                  image: vault.img,
-                  thumbnail: vault.img,
-                  img: vault.img,
-                  videoCount: (vault.medialist || vault.mediaList || []).length > 0 
-                    ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video' || m.mediaType === 'video' || !m.type).length 
-                    : 1,
-                  photoCount: (vault.medialist || vault.mediaList || []).length > 0 
-                    ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image' || m.mediaType === 'image').length 
-                    : 1
-                }}
-                creator={{
-                  name: vault.creatorName || "Verified Creator",
-                  avatarUrl: vault.creatorAvatar || vault.avatarUrl || vault.img || "https://via.placeholder.com/150",
-                  verified: true
-                }}
-                buttonText="Subscribe"
-                onUnlock={() => {
-                  setSelectedVaultId(vault.id); 
-                  setSelectedCreator(vault); 
-                  setActiveTab('vip');
-                }}
-              />
-            );
-          })}
+          {displayedVaults.length === 0 ? (
+            <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-10 text-center text-gray-400 text-xs">
+              No creators or vaults match your search.
+            </div>
+          ) : (
+            displayedVaults.map((vault) => {
+              return (
+                <CreatorFeedCard 
+                  key={vault.id} 
+                  vault={{
+                    ...vault,
+                    coverUrl: vault.img,
+                    image: vault.img,
+                    thumbnail: vault.img,
+                    img: vault.img,
+                    videoCount: (vault.medialist || vault.mediaList || []).length > 0 
+                      ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'video' || m.mediaType === 'video' || !m.type).length 
+                      : 1,
+                    photoCount: (vault.medialist || vault.mediaList || []).length > 0 
+                      ? (vault.medialist || vault.mediaList || []).filter(m => m.type === 'image' || m.mediaType === 'image').length 
+                      : 1
+                  }}
+                  creator={{
+                    name: vault.creatorName || "Verified Creator",
+                    avatarUrl: vault.creatorAvatar || vault.avatarUrl || vault.img || "https://via.placeholder.com/150",
+                    verified: true
+                  }}
+                  buttonText="Subscribe"
+                  onUnlock={() => {
+                    setSelectedVaultId(vault.id); 
+                    setSelectedCreator(vault); 
+                    setActiveTab('vip');
+                  }}
+                />
+              );
+            })
+          )}
         </div>
       </div>
     </div>
@@ -1895,7 +2020,7 @@ export default function App() {
         
         <main>
           {['home', 'trending', 'latest', 'popular', 'toprated'].includes(activeTab) && (
-            <HomeLayout activeTab={activeTab} setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} />
+            <HomeLayout activeTab={activeTab} setActiveTab={setActiveTab} vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} searchQuery={searchQuery} />
           )}
           {activeTab === 'creators' && (
             <CreatorDirectoryLayout vaults={vaults} setSelectedVaultId={setSelectedVaultId} setSelectedCreator={setSelectedCreator} setActiveTab={setActiveTab} />
