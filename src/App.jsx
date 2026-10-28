@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, limit, where, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { 
@@ -19,6 +19,45 @@ const Toast = ({ msg }) => (
     <CheckCircle2 size={18} /> {msg}
   </div>
 );
+
+// --- Global Broadcast Banner Component ---
+const BroadcastBanner = () => {
+  const [banner, setBanner] = useState({ text: '', active: false });
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'announcement'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setBanner(prev => {
+          if (prev.text !== data.text && data.active) {
+            setIsDismissed(false); // Un-dismiss when a new message is published
+          }
+          return data;
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (!banner.active || !banner.text || isDismissed) return null;
+
+  return (
+    <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2 px-4 text-xs md:text-sm font-bold shadow-md w-full flex items-center justify-between z-[100] animate-in slide-in-from-top-2">
+      <div className="w-6 hidden md:block"></div> 
+      <div className="flex-1 flex justify-center items-center gap-2">
+        <span>📢 {banner.text}</span>
+      </div>
+      <button 
+        onClick={() => setIsDismissed(true)} 
+        className="text-white/80 hover:text-white transition-colors bg-black/20 hover:bg-black/40 rounded-full p-1 shrink-0"
+        aria-label="Close banner"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+};
 
 // --- Custom Silhouette Logo Component ---
 const Logo = () => (
@@ -114,7 +153,7 @@ const BottomNav = ({ activeTab, setActiveTab, setIsMobileMenuOpen, currentUser }
 // --- Top Navigation Bar ---
 const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentUser, handleLogout, isOwner, setIsMobileMenuOpen }) => {
   return (
-    <header className="sticky top-0 z-50 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
+    <header className="sticky top-0 z-40 bg-[#0A0C10]/95 backdrop-blur-xl border-b border-gray-800/80 px-4 py-3 w-full">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-gray-300 hover:text-white p-1">
@@ -460,6 +499,10 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [mediaList, setMediaList] = useState([]); 
   const [loading, setLoading] = useState(false);
   
+  // Broadcast Banner State
+  const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastActive, setBroadcastActive] = useState(false);
+
   const [isImageUploading, setIsImageUploading] = useState(false);
   const CLOUDINARY_CLOUD_NAME = "caqvcdhb";
   const CLOUDINARY_UPLOAD_PRESET = "thika_preset"; 
@@ -467,6 +510,55 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [isUploading, setIsUploading] = useState(false);
   const BUNNY_LIBRARY_ID = "789594";
   const BUNNY_API_KEY = "b04bfe12-c288-49c6-b90e1efb5008-874a-4003";
+
+  useEffect(() => {
+    const fetchBroadcast = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'announcement'));
+        if (snap.exists()) {
+          setBroadcastText(snap.data().text || '');
+          setBroadcastActive(snap.data().active || false);
+        }
+      } catch (err) {
+        console.error("Error fetching broadcast:", err);
+      }
+    };
+    fetchBroadcast();
+  }, []);
+
+  const handleSaveBroadcast = async (e) => {
+    e.preventDefault();
+    try {
+      await setDoc(doc(db, 'settings', 'announcement'), {
+        text: broadcastText,
+        active: broadcastActive,
+        updatedAt: new Date().toISOString()
+      });
+      setToastMsg("Broadcast banner updated successfully!");
+      setTimeout(() => setToastMsg(''), 3000);
+    } catch (err) {
+      setToastMsg("Error saving broadcast banner.");
+      setTimeout(() => setToastMsg(''), 3000);
+    }
+  };
+
+  const handleStatusToggle = async (vaultId, currentStatus) => {
+    const nextStatus = currentStatus === 'active' ? 'archived' : 'active';
+    try {
+      await updateDoc(doc(db, 'vaults', vaultId), { status: nextStatus });
+      setVaults(vaults.map(v => v.id === vaultId ? { ...v, status: nextStatus } : v));
+      setToastMsg(`Vault successfully ${nextStatus === 'active' ? 'Published' : 'Archived'}`);
+      setTimeout(() => setToastMsg(''), 2000);
+    } catch (err) {
+      setToastMsg("Failed to update status.");
+      setTimeout(() => setToastMsg(''), 3000);
+    }
+  };
+
+  const handleEditVault = (vaultId) => {
+    setToastMsg("Edit mode interface coming soon!");
+    setTimeout(() => setToastMsg(''), 2000);
+  };
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
@@ -586,7 +678,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         mediaCount: `${mediaList.length} items`,
         img: imgUrl.trim(),
         medialist: mediaList,
-        status: 'locked',
+        status: 'active',
         createdAt: new Date()
       });
       setVaults(prev => [...prev, {
@@ -597,7 +689,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
           weekly: Number(weeklyPrice), 
           monthly: Number(monthlyPrice) 
         },
-        mediaCount: `${mediaList.length} items`, img: imgUrl, medialist: mediaList, status: 'locked'
+        mediaCount: `${mediaList.length} items`, img: imgUrl, medialist: mediaList, status: 'active'
       }]);
       setCreatorName('');
       setAvatarUrl('');
@@ -735,9 +827,37 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="bg-black/50 border border-gray-800/80 p-4 rounded-xl text-center">
                 <span className="text-2xl font-black text-[#00F0FF]">{vaults.length}</span>
-                <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Active Vaults</p>
+                <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider">Total Vaults</p>
               </div>
             </div>
+          </div>
+
+          <div className="bg-[#12151c] border border-gray-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">📢 Global Broadcast Banner</h3>
+            <form onSubmit={handleSaveBroadcast} className="space-y-4">
+              <input 
+                type="text" 
+                value={broadcastText} 
+                onChange={(e) => setBroadcastText(e.target.value)}
+                placeholder="e.g., 🔥 New set dropping in 1 hour!"
+                className="w-full bg-black text-white text-xs border border-gray-800 rounded-xl py-3 px-4 focus:outline-none focus:border-[#00F0FF]"
+              />
+              <div className="flex items-center gap-3 bg-black/40 border border-gray-800 p-3 rounded-xl">
+                <input 
+                  type="checkbox" 
+                  id="broadcastActive"
+                  checked={broadcastActive}
+                  onChange={(e) => setBroadcastActive(e.target.checked)}
+                  className="w-4 h-4 rounded bg-black border-gray-800 text-[#00F0FF] focus:ring-0 cursor-pointer"
+                />
+                <label htmlFor="broadcastActive" className="text-xs text-gray-300 font-bold cursor-pointer select-none">
+                  Show banner live on user homepage
+                </label>
+              </div>
+              <button type="submit" className="w-full bg-[#00F0FF] hover:bg-[#00e6f2] text-black font-black py-3 rounded-xl text-xs transition-all shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                Save & Publish Banner
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -750,29 +870,56 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
               <tr>
                 <th className="pb-3">Thumbnail</th>
                 <th className="pb-3">Creator / Title</th>
-                <th className="pb-3">Featured</th>
                 <th className="pb-3">Items</th>
+                <th className="pb-3">Status</th>
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60">
-              {vaults.map((vault) => (
-                <tr key={vault.id} className="hover:bg-black/30">
-                  <td className="py-3"><img src={vault.img} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" /></td>
-                  <td className="py-3">
-                    <div className="font-bold text-white">{vault.creatorName || 'Creator'}</div>
-                    <div className="text-[10px] text-gray-400">{vault.title}</div>
-                  </td>
-                  <td className="py-3">
-                    {vault.isFeatured ? <span className="bg-[#FFD700]/20 text-[#FFD700] text-[10px] px-2 py-0.5 rounded font-bold">Featured</span> : <span className="text-gray-500 text-[10px]">Standard</span>}
-                  </td>
-                  <td className="py-3 text-gray-400 font-mono">{vault.mediaList?.length || 1} items</td>
-                  <td className="py-3 text-right space-x-2">
-                    <button onClick={() => { setSelectedVaultId(vault.id); setActiveTab('vip'); }} className="text-[#00F0FF] hover:underline px-2 py-1 font-bold">View</button>
-                    <button onClick={() => handleDeleteVault(vault.id)} className="text-red-400 hover:text-red-300 p-1 rounded"><Trash2 size={16}/></button>
-                  </td>
-                </tr>
-              ))}
+              {vaults.map((vault) => {
+                const status = vault.status || 'active';
+                const statusColor = status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : status === 'locked' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30';
+                
+                return (
+                  <tr key={vault.id} className="hover:bg-black/30 transition-colors">
+                    <td className="py-3"><img src={vault.img} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-800" /></td>
+                    <td className="py-3">
+                      <div className="font-bold text-white flex items-center gap-2">
+                        {vault.creatorName || 'Creator'} 
+                        {vault.isFeatured && <span className="bg-[#FFD700]/20 text-[#FFD700] text-[8px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Hero Drop</span>}
+                      </div>
+                      <div className="text-[10px] text-gray-400">{vault.title}</div>
+                    </td>
+                    <td className="py-3 text-gray-400 font-mono">{vault.mediaList?.length || 1} items</td>
+                    <td className="py-3">
+                      <span className={`px-2.5 py-1 rounded text-[9px] uppercase font-bold border ${statusColor}`}>
+                        {status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right space-x-2 whitespace-nowrap">
+                      <button 
+                        onClick={() => handleEditVault(vault.id)} 
+                        className="text-blue-400 hover:text-blue-300 px-2 py-1 font-bold text-[10px] uppercase transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleStatusToggle(vault.id, status)} 
+                        className={`${status === 'active' ? 'text-yellow-400 hover:text-yellow-300' : 'text-emerald-400 hover:text-emerald-300'} px-2 py-1 font-bold text-[10px] uppercase transition-colors`}
+                      >
+                        {status === 'active' ? 'Archive' : 'Unarchive'}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteVault(vault.id)} 
+                        className="text-red-400 hover:text-red-300 p-1 rounded inline-flex align-middle transition-colors"
+                        title="Delete Vault"
+                      >
+                        <Trash2 size={16}/>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -783,7 +930,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 
 // --- Home Layout / Tab Sorting Logic with Dynamic Featured Hero ---
 const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSelectedCreator }) => {
-  let displayedVaults = [...vaults];
+  let displayedVaults = [...vaults].filter(v => v.status !== 'archived');
 
   if (activeTab === 'latest') {
     displayedVaults.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
@@ -791,7 +938,7 @@ const HomeLayout = ({ activeTab, setActiveTab, vaults, setSelectedVaultId, setSe
     displayedVaults.reverse();
   }
 
-  const featuredDrop = vaults.find(v => v.isFeatured) || vaults[0];
+  const featuredDrop = vaults.find(v => v.isFeatured && v.status !== 'archived') || displayedVaults[0];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8 animate-in fade-in">
@@ -867,7 +1014,7 @@ const CreatorDirectoryLayout = ({ vaults, setSelectedVaultId, setSelectedCreator
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {vaults.map((vault) => (
+        {vaults.filter(v => v.status !== 'archived').map((vault) => (
           <div 
             key={vault.id} 
             onClick={() => { setSelectedVaultId(vault.id); setSelectedCreator(vault); setActiveTab('vip'); }}
@@ -1743,6 +1890,7 @@ export default function App() {
       )}
 
       <div>
+        <BroadcastBanner />
         <Header activeTab={activeTab} setActiveTab={setActiveTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} currentUser={currentUser} handleLogout={handleLogout} isOwner={isOwner} setIsMobileMenuOpen={setIsMobileMenuOpen} />
         
         <main>
