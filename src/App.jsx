@@ -377,6 +377,8 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
 // --- Admin Dashboard ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [creatorName, setCreatorName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [title, setTitle] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [sneakPeekPrice, setSneakPeekPrice] = useState('50');
@@ -393,6 +395,28 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [isUploading, setIsUploading] = useState(false);
   const BUNNY_LIBRARY_ID = "789594";
   const BUNNY_API_KEY = "b04bfe12-c288-49c6-b90e1efb5008-874a-4003";
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsAvatarUploading(true);
+    setToastMsg("Uploading creator avatar...");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.secure_url) {
+        setAvatarUrl(data.secure_url);
+        setToastMsg("Creator avatar uploaded!");
+      }
+    } catch (error) {
+      setToastMsg("Error: " + error.message);
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
 
   const handleCoverUpload = async (e) => {
     const file = e.target.files[0];
@@ -478,6 +502,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     try {
       const docRef = await addDoc(collection(db, "vaults"), {
         creatorName: creatorName.trim(),
+        creatorAvatar: avatarUrl || imgUrl.trim(),
         title: title.trim(),
         isFeatured: isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
@@ -488,11 +513,12 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         createdAt: new Date()
       });
       setVaults(prev => [...prev, {
-        id: docRef.id, creatorName, title: title, isFeatured,
+        id: docRef.id, creatorName, creatorAvatar: avatarUrl || imgUrl, title: title, isFeatured,
         pricing: { sneakPeek: Number(sneakPeekPrice), lifetime: Number(lifetimePrice), global: Number(globalPrice) },
         mediaCount: `${mediaList.length} items`, img: imgUrl, medialist: mediaList, status: 'locked'
       }]);
       setCreatorName('');
+      setAvatarUrl('');
       setTitle('');
       setIsFeatured(false);
       setImgUrl('');
@@ -572,6 +598,15 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Global Pass (KES)</label>
                 <input type="number" value={globalPrice} onChange={(e) => setGlobalPrice(e.target.value)} className="w-full bg-black text-[#00F0FF] font-mono text-xs border border-gray-800 rounded-xl py-2 px-2 focus:outline-none focus:border-[#00F0FF]"/>
               </div>
+            </div>
+
+            <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
+                <User size={14} className="text-[#00F0FF]" /> Creator Profile Avatar
+              </label>
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={isAvatarUploading} className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-[#00F0FF]/10 file:text-[#00F0FF]" />
+              {isAvatarUploading && <p className="text-[10px] text-[#00F0FF] animate-pulse mt-1">Uploading avatar...</p>}
+              {avatarUrl && <p className="text-[10px] text-green-400 mt-1">Avatar set successfully!</p>}
             </div>
 
             <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
@@ -779,7 +814,8 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
   const [selectedTierPrice, setSelectedTierPrice] = useState(0);
   
   const isUnlocked = activeVault?.status === 'unlocked';
-  const mediaList = activeVault?.mediaList || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
+  // FIXED: Catches medialist vs mediaList spelling variations automatically
+  const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
   const pricing = activeVault?.pricing || { sneakPeek: activeVault?.price || 50, lifetime: 150, global: 1500 };
 
   useEffect(() => {
@@ -841,7 +877,13 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                 onClick={() => setActiveModalItem(item)}
                 className="relative aspect-video rounded-xl overflow-hidden bg-black border border-gray-800 group cursor-pointer hover:border-[#00F0FF] transition-all shadow-lg"
               >
-                <img src={item.thumb || activeVault?.img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                {/* DYNAMIC THUMBNAIL: Pulls Bunny.net video frame or Cloudinary image. Falls back to cover image if not found */}
+                <img 
+                  src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
+                  onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
+                  alt="" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors"></div>
                 <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1 border border-gray-800">
                   {item.type === 'video' ? <Film size={12}/> : <ImageIcon size={12}/>}
@@ -890,7 +932,12 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
                     onClick={() => setActiveModalItem(m)}
                     className={`w-20 h-12 rounded-lg overflow-hidden shrink-0 cursor-pointer border-2 transition-all ${activeModalItem.urlOrId === m.urlOrId ? 'border-[#00F0FF] scale-105' : 'border-gray-800 opacity-60'}`}
                   >
-                    <img src={m.thumb} alt="" className="w-full h-full object-cover" />
+                    <img 
+                      src={m.type === 'image' ? m.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${m.urlOrId}/thumbnail.jpg`}
+                      onError={(e) => { e.target.src = m.thumb || activeVault?.img; }}
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                 ))}
               </div>
@@ -917,8 +964,10 @@ const VIPLayout = ({ activeVault, customerPhone, setCustomerPhone, handlePayment
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {mediaList.map((item, idx) => (
               <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 group shadow-lg">
+                {/* LOCKED DYNAMIC THUMBNAIL: Applies blur to actual video frames and photos */}
                 <img 
-                  src={item.thumb || activeVault?.img} 
+                  src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
+                  onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
                   alt="Preview" 
                   className="w-full h-full object-cover filter blur-[6px] scale-105 transition-transform duration-300 group-hover:scale-110" 
                 />
