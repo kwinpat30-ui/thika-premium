@@ -171,7 +171,6 @@ const NotificationBell = () => {
     setIsOpen(!isOpen);
     if (!isOpen && unreadCount > 0) {
       setUnreadCount(0);
-      // Mark notifications as read in local/session or state
     }
   };
 
@@ -232,15 +231,12 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
           <div onClick={() => setActiveTab('home')}><Logo /></div>
         </div>
 
-        {/* Desktop Search Bar */}
         <div className="hidden md:flex relative flex-1 max-w-md">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos, creators, tags..." className="w-full bg-[#12151c] text-white text-xs border border-gray-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:border-[#00F0FF] transition-colors" />
         </div>
 
-        {/* Right Action Icons & Buttons */}
         <div className="flex items-center gap-2">
-          {/* Mobile Search Toggle Button */}
           <button 
             onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} 
             className="md:hidden p-2 rounded-full bg-gray-900 border border-gray-800 text-gray-300 hover:text-[#00F0FF]"
@@ -249,7 +245,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
             <Search size={18} />
           </button>
 
-          {/* Live Notification Bell */}
           <NotificationBell />
 
           {currentUser ? (
@@ -273,7 +268,6 @@ const Header = ({ activeTab, setActiveTab, searchQuery, setSearchQuery, currentU
         </div>
       </div>
 
-      {/* Mobile Expandable Search Bar Overlay */}
       {isMobileSearchOpen && (
         <div className="md:hidden pt-3 pb-1 px-1 animate-in slide-in-from-top-2">
           <div className="relative w-full">
@@ -322,7 +316,7 @@ const ExpiryWarningBanner = ({ expiresAt, onExpire, onRenewClick }) => {
       if (difference <= 0) {
         clearInterval(interval);
         setTimeLeft(0);
-        if (onExpire) onExpire(); // Instantly triggers vault lock state
+        if (onExpire) onExpire();
       } else {
         setTimeLeft(difference);
       }
@@ -337,7 +331,7 @@ const ExpiryWarningBanner = ({ expiresAt, onExpire, onRenewClick }) => {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  if (totalSeconds > 300) return null; // Shows warning when 5 mins or less remain
+  if (totalSeconds > 300) return null;
 
   return (
     <div style={{
@@ -586,7 +580,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-// --- Admin Dashboard ---
+// --- Admin Dashboard (Cloudinary Completely Replaced with Bunny.net Storage) ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [creatorName, setCreatorName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -606,12 +600,15 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
   const [broadcastActive, setBroadcastActive] = useState(false);
 
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const CLOUDINARY_CLOUD_NAME = "caqvcdhb";
-  const CLOUDINARY_UPLOAD_PRESET = "thika_preset"; 
 
   const [isUploading, setIsUploading] = useState(false);
   const BUNNY_LIBRARY_ID = "789594";
   const BUNNY_API_KEY = "b04bfe12-c288-49c6-b90e1efb5008-874a-4003";
+
+  // BUNNY STORAGE CONFIG FOR IMAGES
+  const BUNNY_STORAGE_ZONE = "thika-images";
+  const BUNNY_STORAGE_PASSWORD = "897e22a5-1e68-4d05-83473d0332af-1ace-44e3";
+  const BUNNY_PULL_ZONE = "thika-images-cdn.b-cdn.net";
 
   useEffect(() => {
     const fetchBroadcast = async () => {
@@ -666,16 +663,18 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     const file = e.target.files[0];
     if (!file) return;
     setIsAvatarUploading(true);
-    setToastMsg("Uploading creator avatar...");
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    setToastMsg("Uploading creator avatar to Bunny.net...");
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.secure_url) {
-        setAvatarUrl(data.secure_url);
-        setToastMsg("Creator avatar uploaded!");
+      const filename = `avatar_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const url = `https://storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/${filename}`;
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "AccessKey": BUNNY_STORAGE_PASSWORD, "Content-Type": file.type || "application/octet-stream" },
+        body: file
+      });
+      if (res.ok) {
+        setAvatarUrl(`https://${BUNNY_PULL_ZONE}/${filename}`);
+        setToastMsg("Creator avatar uploaded securely!");
       }
     } catch (error) {
       setToastMsg("Error: " + error.message);
@@ -688,16 +687,18 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     const file = e.target.files[0];
     if (!file) return;
     setIsImageUploading(true);
-    setToastMsg("Uploading cover thumbnail...");
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    setToastMsg("Uploading cover thumbnail to Bunny.net...");
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.secure_url) {
-        setImgUrl(data.secure_url);
-        setToastMsg("Cover thumbnail uploaded!");
+      const filename = `cover_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const url = `https://storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/${filename}`;
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "AccessKey": BUNNY_STORAGE_PASSWORD, "Content-Type": file.type || "application/octet-stream" },
+        body: file
+      });
+      if (res.ok) {
+        setImgUrl(`https://${BUNNY_PULL_ZONE}/${filename}`);
+        setToastMsg("Cover thumbnail uploaded securely!");
       }
     } catch (error) {
       setToastMsg("Error uploading image: " + error.message);
@@ -739,21 +740,25 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
     } else if (type === 'image') {
       setIsImageUploading(true);
       for (const file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+        setToastMsg(`Uploading gallery photo to Bunny.net...`);
         try {
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
-          const data = await res.json();
-          if (data.secure_url) {
-            setMediaList(prev => [...prev, { type: 'image', urlOrId: data.secure_url, thumb: data.secure_url }]);
+          const filename = `gallery_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+          const url = `https://storage.bunnycdn.com/${BUNNY_STORAGE_ZONE}/${filename}`;
+          const res = await fetch(url, {
+            method: "PUT",
+            headers: { "AccessKey": BUNNY_STORAGE_PASSWORD, "Content-Type": file.type || "application/octet-stream" },
+            body: file
+          });
+          if (res.ok) {
+            const finalUrl = `https://${BUNNY_PULL_ZONE}/${filename}`;
+            setMediaList(prev => [...prev, { type: 'image', urlOrId: finalUrl, thumb: finalUrl }]);
           }
         } catch (err) {
           console.error(err);
         }
       }
       setIsImageUploading(false);
-      setToastMsg("Gallery photos added successfully!");
+      setToastMsg("Gallery photos added securely!");
     }
   };
 
@@ -784,7 +789,6 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
         createdAt: new Date()
       });
 
-      // Automatically push a notification for users
       await addDoc(collection(db, "notifications"), {
         title: `🔥 New Drop: ${creatorName.trim()}`,
         message: `${title.trim()} is now live with ${mediaList.length} items!`,
@@ -916,7 +920,7 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
 
             <div className="p-3 border border-gray-700 rounded-xl bg-black/50">
               <label className="block text-xs font-bold text-gray-300 uppercase mb-1 flex items-center gap-1">
-                <ImageIcon size={14} className="text-green-400" /> Add Gallery Photos (Cloudinary)
+                <ImageIcon size={14} className="text-green-400" /> Add Gallery Photos (Bunny.net)
               </label>
               <input type="file" accept="image/*" multiple onChange={(e) => handleMediaUpload(e, 'image')} disabled={isImageUploading} className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-green-500/10 file:text-green-400" />
               {isImageUploading && <p className="text-[10px] text-green-400 animate-pulse mt-1">Uploading photos...</p>}
@@ -1170,7 +1174,10 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
   const [checkoutStep, setCheckoutStep] = useState(0); 
   const [selectedTierPrice, setSelectedTierPrice] = useState(0);
   
-  const isUnlocked = activeVault?.status === 'unlocked';
+  // ⚡ Anti-Glitch Expiration Guard ⚡
+  const isExpired = activeVault?.expiresAt && new Date().getTime() > new Date(activeVault.expiresAt).getTime();
+  const isUnlocked = activeVault?.status === 'unlocked' && !isExpired;
+  
   const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
   const pricing = activeVault?.pricing || { sneakPeek: 40, daily: 100, weekly: 450, monthly: 800 };
 
