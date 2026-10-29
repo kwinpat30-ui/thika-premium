@@ -730,7 +730,9 @@ const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelected
             body: file
           });
 
-          setMediaList(prev => [...prev, { type: 'video', urlOrId: videoId, thumb: imgUrl || "https://images.unsplash.com/photo-1570872626485-d8ffea69f463?q=80&w=600&auto=format&fit=crop" }]);
+          // Explicitly assign the Bunny stream thumbnail URL
+          const bunnyThumb = `https://vz-${BUNNY_LIBRARY_ID}.b-cdn.net/${videoId}/thumbnail.jpg`;
+          setMediaList(prev => [...prev, { type: 'video', urlOrId: videoId, thumb: bunnyThumb }]);
         } catch (err) {
           console.error(err);
         }
@@ -1201,10 +1203,15 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
     setTimeout(() => setToastMsg(''), 2000);
   };
 
-  // ⚡ Clean thumbnail resolver without cover image fallback ⚡
+  // ⚡ Strict Video Frame Thumbnail Resolver ⚡
   const getThumbnail = (item) => {
+    if (!item) return '';
     if (item.type === 'image') return item.urlOrId;
-    return `https://vz-789594.b-cdn.net/${item.urlOrId}/thumbnail.jpg`; 
+    if (item.thumb && item.thumb.startsWith('http')) return item.thumb;
+    if (item.urlOrId && item.urlOrId.length > 10) {
+      return `https://vz-789594.b-cdn.net/${item.urlOrId}/thumbnail.jpg`;
+    }
+    return '';
   };
 
   return (
