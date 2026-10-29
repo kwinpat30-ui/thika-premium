@@ -580,7 +580,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-// --- Admin Dashboard (Cloudinary Completely Replaced with Bunny.net Storage) ---
+// --- Admin Dashboard ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [creatorName, setCreatorName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -1178,7 +1178,7 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
   const isExpired = activeVault?.expiresAt && new Date().getTime() > new Date(activeVault.expiresAt).getTime();
   const isUnlocked = activeVault?.status === 'unlocked' && !isExpired;
   
-  const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81', thumb: activeVault?.img }];
+  const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81' }];
   const pricing = activeVault?.pricing || { sneakPeek: 40, daily: 100, weekly: 450, monthly: 800 };
 
   useEffect(() => {
@@ -1252,9 +1252,10 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
               >
                 <img 
                   src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
-                  onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = item.thumb || activeVault?.img; }}
+                  loading="lazy"
                   alt="" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-[#12151c]" 
                 />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors"></div>
                 <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1 border border-gray-800">
@@ -1306,9 +1307,10 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
                   >
                     <img 
                       src={m.type === 'image' ? m.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${m.urlOrId}/thumbnail.jpg`}
-                      onError={(e) => { e.target.src = m.thumb || activeVault?.img; }}
+                      onError={(e) => { e.target.onerror = null; e.target.src = m.thumb || activeVault?.img; }}
+                      loading="lazy"
                       alt="" 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover bg-[#12151c]" 
                     />
                   </div>
                 ))}
@@ -1338,9 +1340,10 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
               <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 group shadow-lg">
                 <img 
                   src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
-                  onError={(e) => { e.target.src = item.thumb || activeVault?.img; }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = item.thumb || activeVault?.img; }}
+                  loading="lazy"
                   alt="Preview" 
-                  className="w-full h-full object-cover filter blur-[6px] scale-105 transition-transform duration-300 group-hover:scale-110" 
+                  className="w-full h-full object-cover filter blur-[6px] scale-105 transition-transform duration-300 group-hover:scale-110 bg-[#12151c]" 
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <span className="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-800 flex items-center gap-1">
