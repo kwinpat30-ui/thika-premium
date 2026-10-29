@@ -1201,9 +1201,8 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
     setTimeout(() => setToastMsg(''), 2000);
   };
 
-  // Natively handle Bunny Stream and Storage URLs
+  // ⚡ Clean thumbnail resolver without cover image fallback ⚡
   const getThumbnail = (item) => {
-    if (item.thumb && item.thumb.startsWith('http')) return item.thumb;
     if (item.type === 'image') return item.urlOrId;
     return `https://vz-789594.b-cdn.net/${item.urlOrId}/thumbnail.jpg`; 
   };
@@ -1259,7 +1258,6 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
               >
                 <img 
                   src={getThumbnail(item)}
-                  onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                   loading="lazy"
                   alt="" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
@@ -1314,7 +1312,6 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
                   >
                     <img 
                       src={getThumbnail(m)}
-                      onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                       loading="lazy"
                       alt="" 
                       className="w-full h-full object-cover" 
@@ -1347,12 +1344,10 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
               <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-[#0A0C10] border border-gray-800 group shadow-lg">
                 <img 
                   src={getThumbnail(item)}
-                  onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                   loading="lazy"
                   alt="Preview" 
                   className="w-full h-full object-cover scale-105 transition-transform duration-300 group-hover:scale-110" 
                 />
-                {/* ⚡ THE FIX: Hardware-accelerated backdrop blur overlay ⚡ */}
                 <div className="absolute inset-0 bg-black/20 backdrop-blur-[10px] transform-gpu flex items-center justify-center">
                   <span className="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full border border-gray-800 flex items-center gap-1 shadow-xl">
                     <Lock size={12}/> Locked Preview
