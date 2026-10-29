@@ -31,7 +31,7 @@ const BroadcastBanner = () => {
         const data = docSnap.data();
         setBanner(prev => {
           if (prev.text !== data.text && data.active) {
-            setIsDismissed(false); // Un-dismiss when a new message is published
+            setIsDismissed(false);
           }
           return data;
         });
