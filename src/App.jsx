@@ -580,7 +580,7 @@ const AccountLayout = ({ currentUser, customerPhone, setCustomerPhone, handleLog
   );
 };
 
-// --- Admin Dashboard ---
+// --- Admin Dashboard (Cloudinary Completely Replaced with Bunny.net Storage) ---
 const AdminLayout = ({ vaults, setVaults, setToastMsg, setActiveTab, setSelectedVaultId }) => {
   const [creatorName, setCreatorName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -1178,7 +1178,7 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
   const isExpired = activeVault?.expiresAt && new Date().getTime() > new Date(activeVault.expiresAt).getTime();
   const isUnlocked = activeVault?.status === 'unlocked' && !isExpired;
   
-  const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [{ type: 'video', urlOrId: '88d804ba-1b4f-4443-b238-c2b87fde1e81' }];
+  const mediaList = activeVault?.medialist || activeVault?.mediaList || activeVault?.media || [];
   const pricing = activeVault?.pricing || { sneakPeek: 40, daily: 100, weekly: 450, monthly: 800 };
 
   useEffect(() => {
@@ -1199,6 +1199,13 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
       setToastMsg("Already in Bookmarks.");
     }
     setTimeout(() => setToastMsg(''), 2000);
+  };
+
+  // Natively handle Bunny Stream and Storage URLs
+  const getThumbnail = (item) => {
+    if (item.thumb && item.thumb.startsWith('http')) return item.thumb;
+    if (item.type === 'image') return item.urlOrId;
+    return `https://vz-789594.b-cdn.net/${item.urlOrId}/thumbnail.jpg`; 
   };
 
   return (
@@ -1248,14 +1255,14 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
               <div 
                 key={idx} 
                 onClick={() => setActiveModalItem(item)}
-                className="relative aspect-video rounded-xl overflow-hidden bg-black border border-gray-800 group cursor-pointer hover:border-[#00F0FF] transition-all shadow-lg"
+                className="relative aspect-video rounded-xl overflow-hidden bg-[#0A0C10] border border-gray-800 group cursor-pointer hover:border-[#00F0FF] transition-all shadow-lg"
               >
                 <img 
-                  src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
-                  onError={(e) => { e.target.onerror = null; e.target.src = item.thumb || activeVault?.img; }}
+                  src={getThumbnail(item)}
+                  onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                   loading="lazy"
                   alt="" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-[#12151c]" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                 />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors"></div>
                 <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-[#00F0FF] flex items-center gap-1 border border-gray-800">
@@ -1306,11 +1313,11 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
                     className={`w-20 h-12 rounded-lg overflow-hidden shrink-0 cursor-pointer border-2 transition-all ${activeModalItem.urlOrId === m.urlOrId ? 'border-[#00F0FF] scale-105' : 'border-gray-800 opacity-60'}`}
                   >
                     <img 
-                      src={m.type === 'image' ? m.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${m.urlOrId}/thumbnail.jpg`}
-                      onError={(e) => { e.target.onerror = null; e.target.src = m.thumb || activeVault?.img; }}
+                      src={getThumbnail(m)}
+                      onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                       loading="lazy"
                       alt="" 
-                      className="w-full h-full object-cover bg-[#12151c]" 
+                      className="w-full h-full object-cover" 
                     />
                   </div>
                 ))}
@@ -1337,16 +1344,17 @@ const VIPLayout = ({ activeVault, setActiveVault, customerPhone, setCustomerPhon
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {mediaList.map((item, idx) => (
-              <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 group shadow-lg">
+              <div key={idx} className="relative aspect-video rounded-2xl overflow-hidden bg-[#0A0C10] border border-gray-800 group shadow-lg">
                 <img 
-                  src={item.type === 'image' ? item.urlOrId : `https://vz-35727a8b-f0d.b-cdn.net/${item.urlOrId}/thumbnail.jpg`}
-                  onError={(e) => { e.target.onerror = null; e.target.src = item.thumb || activeVault?.img; }}
+                  src={getThumbnail(item)}
+                  onError={(e) => { e.target.onerror = null; e.target.src = activeVault?.img; }}
                   loading="lazy"
                   alt="Preview" 
-                  className="w-full h-full object-cover filter blur-[6px] scale-105 transition-transform duration-300 group-hover:scale-110 bg-[#12151c]" 
+                  className="w-full h-full object-cover scale-105 transition-transform duration-300 group-hover:scale-110" 
                 />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm border border-gray-800 flex items-center gap-1">
+                {/* ⚡ THE FIX: Hardware-accelerated backdrop blur overlay ⚡ */}
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-[10px] transform-gpu flex items-center justify-center">
+                  <span className="text-xs font-bold text-white bg-black/60 px-3 py-1 rounded-full border border-gray-800 flex items-center gap-1 shadow-xl">
                     <Lock size={12}/> Locked Preview
                   </span>
                 </div>
